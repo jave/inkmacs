@@ -11,14 +11,15 @@
 ;;Experimental integration between inkscape and emacs using dbus.
 
 ;;Currently needs bleeding edge versions of a number of components.
-;; - trunk version of inkscape with dbus enabled (see inkscape dbus bugs)
+;; - trunk version of inkscape with dbus enabled (see note below)
 ;; - trunk version of Eieio(needs a change which hasnt been merged downstream)
 ;; - trunk version of Jan Moringen dbus-proxy 
 ;; - emacs 23(i use emacs from trunk, but 23 should be ok)
 
 ;;If you accept that all this really is bleeding edge for real, and
 ;;not something i just say, controling inkscape from emacs is rather
-;;fun!
+;;fun! If you furthermore use my inkscape branch mentioned below,
+;;inkmacs even aproaches usable!
 
 ;; the long term goal is to make an emacs that does things quickly
 ;;  that currently inhibits creative flow with inkscape. In
@@ -27,7 +28,7 @@
 ;; so, when inspiration hits you: m-x inkscape-blog-sketch, 
 ;;rather than fiddling about in menus etc until you loose inspiration.
 
-                                        ;, for this we want to:
+;;, for this we want to:
 ;; - make the xwidget emacs branch usable, so inkscape can be embedded in emacs
 ;; - make inkscape support xembed, so it can be embedded in emacs
 ;; - make an inkscape mode that shows just the canvas
@@ -39,6 +40,11 @@
 
 ;; very important is to support text editing in emacs. nodes in an outline-mode
 ;; document should preferably be bound to nodes in the inkscape document.
+
+;; please note that there is an Inkscape branch where I have some
+;; bugfixes for the dbus support:
+;; lp:~joakim-verona/inkscape/dbus-fixes
+;; In particular the ink-org integration wont work at all without the fixes
 
 
 ;;check alive
@@ -61,11 +67,21 @@
 
 (defvar inkscape-desktop nil)
 (defvar inkscape-application nil)
+(defvar inkscape-proxies-registered nil)
 
 (defun inkscape-alive ()
   (dbus-ping :session   "org.inkscape" 100))
 
 
+(defun inkscape-register-proxies ()
+  (interactive)
+  (message "registering dbus proxies")
+  (setq inkscape-application (inkscape-app-dbus-proxy-create))
+  (setq inkscape-desktop (inkscape-document-dbus-proxy-create inkscape-desktop-name))
+  (message "registering inkscape verb proxies")
+  (inkscape-make-verb-list)
+  (message "emacs-inkscape bridge ready for action!")
+  (setq inkscape-proxies-registered t))
 
 (defun inkscape-start ()
   (interactive)
@@ -76,16 +92,9 @@
         (while (not(inkscape-alive))
           (setq ping-count (+ 1 ping-count))
           (message "pinging inkscape %d" ping-count)
-          (inkscape-sleep-for)
-          )
-        (message "registering dbus proxies")
-        (setq inkscape-application (inkscape-app-dbus-proxy-create))
-        (setq inkscape-desktop (inkscape-document-dbus-proxy-create inkscape-desktop-name))
-        (message "registering inkscape verb proxies")
-        (inkscape-make-verb-list)
-        (message "emacs-inkscape bridge ready for action!")
-        )
-    (message "inkscape already started and responding to ping")))
+          (inkscape-sleep-for)))
+    (message "inkscape already started and responding to ping")
+    (unless inkscape-proxies-registered (inkscape-register-proxies))))
 
 (defun inkscape-sleep-for ()
   (sleep-for 10);;this call doesnt seem to wait at all.
@@ -133,10 +142,8 @@
   (let* ((dbus-proxy-transform-method-name-function (lambda (name) (inkscape-transform-method-name "inkapp" name)))
          (obj (dbus-proxy-make-remote-proxy
                :session "org.inkscape"
-               "/org/inkscape/application" t))
-         )
-    obj   )
-  )
+               "/org/inkscape/application" t)))
+    obj))
 
 
 (defun inkscape-document-dbus-proxy-create (desktop)
@@ -144,10 +151,11 @@
   (let* ((dbus-proxy-transform-method-name-function (lambda (name) (inkscape-transform-method-name "inkdoc" name)))
          (obj (dbus-proxy-make-remote-proxy
                :session "org.inkscape"
-               (concat "/org/inkscape/" desktop) t))
-         )
-    obj   )
-  )
+               (concat "/org/inkscape/" desktop) t)))
+    obj))
+
+;;TODO
+(setq inkscape-desktop (inkscape-document-dbus-proxy-create "desktop_0"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;,,
 ;;image mode adapter code
@@ -157,6 +165,38 @@
   ;;BUG funnily crashes if called twice on the same desktop object
   (inkdoc-load inkscape-desktop buffer-file-name))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;inkscape org integration
+(defun inkorg-entry-text ()
+  "extract text from current org node, in a format suitable to create an inkscap node from"
+  (let ((text (concat (org-get-heading) "\n" (org-get-entry))))
+    (set-text-properties 0 (length text) nil text )
+    (substring text 0 (string-match org-property-start-re text))))
+
+(defun inkorg-create-text-node ()
+  (interactive)
+  (let* ((text (inkorg-entry-text))
+         (id (org-id-get nil t))
+         (node (inkdoc-text inkscape-desktop 100 100 text)))
+    (inkdoc-set-attribute inkscape-desktop node "id" id)))
+
+(defun inkorg-create-or-update-text-node ()
+  (interactive);bind to c-m-x
+  (let* ((text (inkorg-entry-text))
+        (id (org-id-get nil t)))
+    (if (inkmacs-node-exists inkscape-desktop id)
+        (inkdoc-set-text inkscape-desktop id (inkorg-entry-text))
+      (inkorg-create-text-node))))
+
+(define-minor-mode inkorg-mode "inkorg" nil " inkorg"
+  '(( "\e\C-x" . inkorg-create-or-update-text-node)))
+  
+(defun inkmacs-node-exists (desk name)
+  ;;see if an inkscape object exists
+  ;;inkscpe throws an error if it doesnt, so we catch it instead  
+  (condition-case err
+      (inkdoc-get-attribute   desk name "id")
+      (error nil)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -179,8 +219,9 @@ Inkscape needs to be running 1st. this test doesnt use the dbus-proxy."
       ((desktop "/org/inkscape/desktop_0")
        (rect (dbus-call-method
               :session "org.inkscape" desktop
-              "org.inkscape.document" "rectangle" :int32 100 :int32  100 :int32  100 :int32  100))
-       )))
+              "org.inkscape.document" "rectangle" :int32 100 :int32  100 :int32  100 :int32  100)))))
+
+
 
 (provide 'inkscape)
 

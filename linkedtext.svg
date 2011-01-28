@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:osb="http://www.openswatchbook.org/uri/2009/osb"
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="744.09448819"
+   height="1052.3622047"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.48+devel r"
+   sodipodi:docname="linkedtext.svg">
+  <defs
+     id="defs4">
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient5459">
+      <stop
+         style="stop-color:#160b1a;stop-opacity:1;"
+         offset="0"
+         id="stop5461" />
+      <stop
+         style="stop-color:#160b1a;stop-opacity:0;"
+         offset="1"
+         id="stop5463" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient5453"
+       osb:paint="solid">
+      <stop
+         style="stop-color:#160b1a;stop-opacity:1;"
+         offset="0"
+         id="stop5455" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient5459"
+       id="linearGradient5465"
+       x1="648.51978"
+       y1="975.18707"
+       x2="33.608509"
+       y2="-33.068169"
+       gradientUnits="userSpaceOnUse" />
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.49732305"
+     inkscape:cx="373.42787"
+     inkscape:cy="527.77805"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1280"
+     inkscape:window-height="727"
+     inkscape:window-x="0"
+     inkscape:window-y="24"
+     inkscape:window-maximized="1" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="Layer">
+    <rect
+       style="fill:url(#linearGradient5465);fill-opacity:1;stroke:none"
+       id="rect3972"
+       width="724.45001"
+       height="1045.598"
+       x="11.202861"
+       y="1.7851213"
+       ry="136.92355"
+       inkscape:transform-center-x="258.90998"
+       inkscape:transform-center-y="468.02959" />
+  </g>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <text
+       x="75.708977"
+       y="74.281792"
+       style="font-size:42.44010162px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#1a1a7f;fill-opacity:1;font-family:Sans;-inkscape-font-specification:Sans"
+       id="5b9903b4-b0f6-43f0-b8d6-a3d985f12b69"
+       sodipodi:linespacing="125%"
+       transform="scale(0.70701934,1.4143885)">
+      <tspan
+         sodipodi:role="line"
+         id="tspan5514"
+         x="75.708977"
+         y="74.281792">I N K M A C S</tspan>
+      <tspan
+         sodipodi:role="line"
+         id="tspan5516"
+         x="75.708977"
+         y="127.33192"></tspan>
+      <tspan
+         sodipodi:role="line"
+         id="tspan5518"
+         x="75.708977"
+         y="180.38205">Emacs and Inkscape in unholy union.</tspan>
+      <tspan
+         sodipodi:role="line"
+         id="tspan5520"
+         x="75.708977"
+         y="233.43217"></tspan>
+    </text>
+    <text
+       x="24.975525"
+       y="360.66602"
+       style="font-size:36.40613937px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#e0dc80;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans"
+       id="6382a7db-219a-4640-8f22-d07097e97d06"
+       sodipodi:linespacing="125%"
+       transform="matrix(0.69491912,0,0.09655114,1.4390164,0,0)">
+      <tspan
+         sodipodi:role="line"
+         id="tspan3935"
+         x="24.975525"
+         y="360.66602">There is Org in the mix as well.</tspan>
+      <tspan
+         sodipodi:role="line"
+         id="tspan3937"
+         x="24.975525"
+         y="406.17368">Org properties can be used to link to svg nodes!</tspan>
+      <tspan
+         sodipodi:role="line"
+         id="tspan3939"
+         x="24.975525"
+         y="451.68137">m-x inkorg-mode</tspan>
+      <tspan
+         sodipodi:role="line"
+         id="tspan3941"
+         x="24.975525"
+         y="497.18906">and then C-M-x on an org node</tspan>
+      <tspan
+         sodipodi:role="line"
+         id="tspan3943"
+         x="24.975525"
+         y="542.69666"></tspan>
+    </text>
+    <text
+       x="143.21033"
+       y="186.24883"
+       style="font-size:62.43772888px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;opacity:0.59386974;fill:#b12121;fill-opacity:1;font-family:Sans;-inkscape-font-specification:Sans"
+       id="94a2a8d5-3877-4d26-a8c8-bddc8691c841"
+       sodipodi:linespacing="125%"
+       transform="scale(0.46574488,2.1470982)">
+      <tspan
+         sodipodi:role="line"
+         id="tspan5486"
+         x="143.21033"
+         y="186.24883">Use the power of Emacs to edit svg text</tspan>
+      <tspan
+         sodipodi:role="line"
+         id="tspan5488"
+         x="143.21033"
+         y="264.29596"></tspan>
+    </text>
+    <text
+       x="585.73547"
+       y="545.58411"
+       style="font-size:46.60943604px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;line-height:125%;writing-mode:lr-tb;text-anchor:middle;fill:#e8e082;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans"
+       id="31be55b4-d81d-4eff-b845-0c8641b8a796"
+       sodipodi:linespacing="125%"
+       transform="scale(0.63174463,1.5829181)">
+      <tspan
+         sodipodi:role="line"
+         id="tspan5496"
+         x="585.73547"
+         y="545.58411">Can nothing stop the awesomeness that is ...</tspan>
+      <tspan
+         sodipodi:role="line"
+         id="tspan5498"
+         x="585.73547"
+         y="603.84589">I N K M A C S !</tspan>
+      <tspan
+         sodipodi:role="line"
+         id="tspan5500"
+         x="585.73547"
+         y="662.10767"></tspan>
+    </text>
+  </g>
+</svg>
