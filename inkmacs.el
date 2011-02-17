@@ -1,5 +1,5 @@
 ;; inkmacs.el -- experimental emacs/inkscape bridge
-;; (c) fsf 2010
+;; (c) fsf 2010, 2011
 ;; author:joakim verona
 ;; license:gpl
 
@@ -52,12 +52,14 @@
 
 ;;(dbus-introspect-xml :session   "org.inkscape" "/")
 
-;;(dbus-introspect-get-all-nodes :session   "org.inkscape" "/")
+;;(dbus-introspect-get-all-nodes :session   "org.inkscape" "/org/inkscape")
 
 ;;(dbus-introspect-get-interface :session   "org.inkscape" "/org/inkscape/application" "org.inkscape.application")
 ;;(dbus-introspect-get-method-names :session   "org.inkscape" "/org/inkscape/application" "org.inkscape.application")
 ;;(dbus-introspect-get-method-names  :session "org.inkscape"  "/org/inkscape/desktop_24" "org.inkscape.document")
 ;; (dbus-introspect-get-method  :session "org.inkscape"  "/org/inkscape/desktop_24" "org.inkscape.document" "rectangle")
+
+;;(dbus-introspect :session "org.inkscape" "/org/inkscape")
 (defcustom inkscape-path
   "/home/joakim/build_myprojs/inkscape/inkscape/src/inkscape"
   "path to dbus-enabled inkscape")
@@ -155,6 +157,8 @@
     obj))
 
 ;;TODO
+;; should be buffer local
+;; seems to create an inkscape instance mysteriously
 (setq inkscape-desktop (inkscape-document-dbus-proxy-create "desktop_0"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;,,
@@ -163,24 +167,103 @@
   (interactive)
   ;;TODO check that the buffer contains a SVG file
   ;;BUG funnily crashes if called twice on the same desktop object
-  (inkdoc-load inkscape-desktop buffer-file-name))
+  (inkdoc-load inkscape-desktop  (buffer-file-name)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;inkscape org integration
+;;inkscape org integration - the pride of inkmacs
+;;
+
+;; strategy:
+;;   - tree level 1 represents the file
+;;   - tree level 2 is a column heading
+;;   - tree level 3 and lower are placed in the column
+
+;; inkscape text is a little bit unintuitive:
+;; text objects are realy a set of text span objects with separate prperties
+;; but tde api doesnt ouite reflect that because its inconvenient anyway
+;; furthermore the spans dont change after you create them
+
+;; for the purpose of inkorg, its nicer if we handle formating and
+;; wordwrap inside inkscape. to get that we need a text object and
+;; another linked object which determines the shape. they are both handled separately. 
+
+;; also note that svg 1.2 isnt finalized so convert to text before publishing:
+;; http://wiki.inkscape.org/wiki/index.php/FAQ#What_about_flowed_text.3F
+
+;; tip: create a ospecal txt layer before inkorg-create-text-group
+
+;; these values are used to place new nodes
+;; old nodes will retain their placement
+(defvar inkorg-x 0)
+(defvar inkorg-y 0)
+
+(defun inkorg-create-text-group()
+  (interactive)
+  "traverse an org tree and create text nodes.
+the nodes will be placed on the document canvas according to a simple pattern
+the first time. the nodes will retain position later."
+  (setq inkorg-x 0  inkorg-y 0);;todo refactor
+
+  (org-map-entries 'inkorg-create-or-update-text-node nil 'tree 'comment)
+  )
+
+(defun inkorg-select-tree ()
+  (interactive)
+  "select the nodes in inkscape corresponding to the org tree"
+  (org-map-entries 'inkorg-select-node nil 'tree 'comment)
+  )
+
+(defun inkorg-select-node ()
+  (let* ((id (org-id-get nil t))
+         )
+    (inkdoc-selection-add inkscape-desktop id)
+    (inkdoc-selection-add inkscape-desktop (concat id "-flow"))
+    ))
+    
+    
+
 (defun inkorg-entry-text ()
-  "extract text from current org node, in a format suitable to create an inkscap node from"
+  "extract text from current org node, in a format suitable to
+create an inkscap text node from.
+asterisks and properties are removed."
   (let ((text (concat (org-get-heading) "\n" (org-get-entry))))
     (set-text-properties 0 (length text) nil text )
     (substring text 0 (string-match org-property-start-re text))))
 
+
 (defun inkorg-create-text-node ()
+  "create a corresponding inkscape text node from the current org node."
   (interactive)
+
+  ;;placement
+  (if (= 2 (org-outline-level));;todo refactor
+      (progn
+        (setq inkorg-x (+ 400 inkorg-x))
+        (setq inkorg-y 0)))
+  (setq inkorg-y (+ 200 inkorg-y))
+
+  ;;create text node
   (let* ((text (inkorg-entry-text))
          (id (org-id-get nil t))
-         (node (inkdoc-text inkscape-desktop 100 100 text)))
-    (inkdoc-set-attribute inkscape-desktop node "id" id)))
+         (flow-node (inkdoc-rectangle inkscape-desktop inkorg-x inkorg-y 200 200))  ;; create text flow rectangle
+         (flow-id (concat id "-flow"))
+         (text-node (inkdoc-text inkscape-desktop inkorg-x inkorg-y text)))
+    (inkdoc-set-attribute inkscape-desktop text-node "id" id)
+    (inkdoc-set-attribute inkscape-desktop flow-node "id" flow-id)
+    ;;link text flow frame and text node
+    (inkdoc-set-color inkscape-desktop flow-id 255 255 255 t)
+    ;;   select both objects
+    (inkdoc-selection-set-list inkscape-desktop (list flow-id id))
+    (inkverb-object-flow-text inkscape-desktop) ;;text sshall be flowed in the frame
+    ;; were not finished because the text id has changed so change it back
+    ;; we rely on the new flow object being selected which seems fragile
+    (inkdoc-set-attribute inkscape-desktop     (car (inkdoc-selection-get inkscape-desktop)) "id" id)
+    (inkdoc-selection-clear  inkscape-desktop)
+    ))
 
 (defun inkorg-create-or-update-text-node ()
+  "create a corresponding inkscape text node from the current org
+node, or update the node if it already exists."
   (interactive);bind to c-m-x
   (let* ((text (inkorg-entry-text))
         (id (org-id-get nil t)))
@@ -192,7 +275,7 @@
   '(( "\e\C-x" . inkorg-create-or-update-text-node)))
   
 (defun inkmacs-node-exists (desk name)
-  ;;see if an inkscape object exists
+  "see if an inkscape object exists"
   ;;inkscpe throws an error if it doesnt, so we catch it instead  
   (condition-case err
       (inkdoc-get-attribute   desk name "id")
