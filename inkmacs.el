@@ -207,13 +207,34 @@ the first time. the nodes will retain position later."
   (org-map-entries 'inkorg-create-or-update-text-node nil 'tree 'comment)
   )
 
-(defun inkorg-select-tree ()
-  (interactive)
+;;(defvar inkorg-select 'keep-subtree);;todo should be let bound local
+(defvar inkorg-select-start-level 0);;todo should be let bound local
+
+(defun inkorg-select-skip ()
+  "determine node skippage"
+  (cond
+   ((eq inkorg-select 'keep-siblings)
+    (if (= (org-outline-level) inkorg-select-start-level) nil t))
+   ((eq inkorg-select 'keep-sibling-subtrees)
+    (if (>= (org-outline-level) inkorg-select-start-level) nil t))
+   ((eq inkorg-select 'keep-subtree) nil)
+   (t nil) )
+  )
+
+(defun inkorg-select-tree (inkorg-select)
+  (interactive
+   (list (if current-prefix-arg (read (completing-read "keep:" '("keep-sibling-subtrees" "keep-siblings" "keep-subtree") )))))
   "select the nodes in inkscape corresponding to the org tree"
-  (org-map-entries 'inkorg-select-node nil 'tree 'comment)
+  (save-excursion
+    (org-back-to-heading)
+    (setq inkorg-select-start-level (org-outline-level))
+    (unless (or (= 1 (org-outline-level)) (equal inkorg-select 'keep-subtree))
+      (org-up-heading-all 100))
+    (org-map-entries 'inkorg-select-node nil 'tree 'inkorg-select-skip))
   )
 
 (defun inkorg-select-node ()
+  "select the text and flow objects in inkscape corresponding to the org node"
   (let* ((id (org-id-get nil t))
          )
     (inkdoc-selection-add inkscape-desktop id)
