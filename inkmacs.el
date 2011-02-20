@@ -197,6 +197,13 @@
 (defvar inkorg-x 0)
 (defvar inkorg-y 0)
 
+(defun inkorg-create-or-update-text (do-tree)
+  (interactive "P")
+  (if do-tree
+      (inkorg-create-text-group)
+    (inkorg-create-or-update-text-node))
+ ) 
+
 (defun inkorg-create-text-group()
   (interactive)
   "traverse an org tree and create text nodes.
@@ -222,9 +229,9 @@ the first time. the nodes will retain position later."
   )
 
 (defun inkorg-select-tree (inkorg-select)
+  "select the nodes in inkscape corresponding to the org tree"
   (interactive
    (list (if current-prefix-arg (read (completing-read "keep:" '("keep-sibling-subtrees" "keep-siblings" "keep-subtree") )))))
-  "select the nodes in inkscape corresponding to the org tree"
   (save-excursion
     (org-back-to-heading)
     (setq inkorg-select-start-level (org-outline-level))
@@ -235,8 +242,7 @@ the first time. the nodes will retain position later."
 
 (defun inkorg-select-node ()
   "select the text and flow objects in inkscape corresponding to the org node"
-  (let* ((id (org-id-get nil t))
-         )
+  (let* ((id (org-id-get nil t)))
     (inkdoc-selection-add inkscape-desktop id)
     (inkdoc-selection-add inkscape-desktop (concat id "-flow"))
     ))
@@ -293,7 +299,7 @@ node, or update the node if it already exists."
       (inkorg-create-text-node))))
 
 (define-minor-mode inkorg-mode "inkorg" nil " inkorg"
-  '(( "\e\C-x" . inkorg-create-or-update-text-node)))
+  '(( "\e\C-x" . inkorg-create-or-update-text)))
   
 (defun inkmacs-node-exists (desk name)
   "see if an inkscape object exists"
