@@ -67,9 +67,15 @@
 (defvar inkscape-desktop-name "desktop_0"
   "this is currently hardcoded, since the inkscape dbus api isnt feature complete yet")
 
-(defvar inkscape-desktop nil)
-(defvar inkscape-application nil)
-(defvar inkscape-proxies-registered nil)
+(defvar inkscape-desktop-dummy nil
+  "there is one desktop per document. a bit awkward because we need a dummy desktop for proxie creation.
+then we have buffer local instances.")
+
+(defvar inkscape-application nil
+  "there is only one inkscape application")
+
+(defvar inkscape-proxies-registered nil
+  "the proxies needs creating once. reset it if the interface changes.")
 
 (defun inkscape-alive ()
   (dbus-ping :session   "org.inkscape" 100))
@@ -78,32 +84,13 @@
 (defun inkscape-register-proxies ()
   (interactive)
   (message "registering dbus proxies")
-  (setq inkscape-application (inkscape-app-dbus-proxy-create))
-  (setq inkscape-desktop (inkscape-document-dbus-proxy-create inkscape-desktop-name))
+  (setq inkscape-application (inkscape-app-dbus-proxy-create)) ;;seems to bring up an inkscape window
+  (setq inkscape-desktop-dummy (inkscape-document-dbus-proxy-create inkscape-desktop-name))
   (message "registering inkscape verb proxies")
   (inkscape-make-verb-list)
   (message "emacs-inkscape bridge ready for action!")
   (setq inkscape-proxies-registered t))
 
-(defun inkscape-start ()
-  (interactive)
-  (if (not (dbus-ping :session   "org.inkscape" 100))
-      (let*
-          ((ping-count 0)
-           (inkproc (start-process "inkscape" "*inkscape*" inkscape-path )))
-        (while (not(inkscape-alive))
-          (setq ping-count (+ 1 ping-count))
-          (message "pinging inkscape %d" ping-count)
-          (inkscape-sleep-for)))
-    (message "inkscape already started and responding to ping")
-    (unless inkscape-proxies-registered (inkscape-register-proxies))))
-
-(defun inkscape-sleep-for ()
-  (sleep-for 10);;this call doesnt seem to wait at all.
-  (read-string "sleep-for, just press enter");; so do this as a workaround
-  ;;if the sleep-for doesnt work, we get a busy loop and we DOS dbus, and all manner of bad things happen
-  ;;TODO therefore ive factored out the sleep-for until a proper resolution is found
-  )
 
 ;; call-verb support
 ;; inkscape doesnt export all functionality through proper dbus interfaces atm.
@@ -120,8 +107,8 @@
 
 (defun inkscape-make-verb-method (name doc)
   (eval `(defmethod ,(intern (inkscape-transform-method-name "inkverb" name))
-           ((this 'org\.freedesktop\.DBus\.Introspectable-org\.freedesktop\.DBus\.Properties-org\.inkscape\.document
-             ;;,(object-class inkscape-desktop) ;;inkscape-desktop must be initialized
+           ((this ;;   'org\.freedesktop\.DBus\.Introspectable-org\.freedesktop\.DBus\.Properties-org\.inkscape\.document
+             ,(object-class inkscape-desktop) ;;inkscape-desktop must be initialized
                   ))
            ,doc
            (inkdoc-call-verb this ,name))))
@@ -138,9 +125,6 @@
  example. un-camelcase. switch underscore to dash."
   (concat prefix "-" (replace-regexp-in-string "_" "-" (dbus-proxy-transform-camel-case name))))
 
-
-
-
 (defun inkscape-app-dbus-proxy-create ()
   "create dbus-proxy to talk to inkscape app"
   (let* ((dbus-proxy-transform-method-name-function (lambda (name) (inkscape-transform-method-name "inkapp" name)))
@@ -149,9 +133,9 @@
                "/org/inkscape/application" t)))
     obj))
 
-
 (defun inkscape-document-dbus-proxy-create (desktop)
-  "create dbus-proxy to talk to inkscape desktop"
+  "create dbus-proxy to talk to inkscape desktop.
+slow the first time, then not so bad."
   (let* ((dbus-proxy-transform-method-name-function (lambda (name) (inkscape-transform-method-name "inkdoc" name)))
          (obj (dbus-proxy-make-remote-proxy
                :session "org.inkscape"
@@ -168,9 +152,8 @@
   "create a buffer local instance of inkscape"
   ;;TODO this needs more cleverness
   ;;handle closing of ink desktop etc
-  (unless inkscape-desktop
-    (let ((newdesk (car (last (split-string (inkapp-desktop-new inkscape-application ) "/")))))
-      (set (make-local-variable 'inkscape-desktop) (inkscape-document-dbus-proxy-create newdesk)))))
+  (let ((newdesk (car (last (split-string (inkapp-desktop-new inkscape-application ) "/")))))
+    (set (make-local-variable 'inkscape-desktop) (inkscape-document-dbus-proxy-create newdesk))))
 
 (defun inkscape-local-instance-close ()
   (inkdoc-close inkscape-desktop)
@@ -332,6 +315,12 @@ node, or update the node if it already exists."
   (condition-case err
       (inkdoc-get-attribute   desk name "id")
       (error nil)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;initialize bridge
+(inkscape-register-proxies)
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
