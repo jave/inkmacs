@@ -120,7 +120,9 @@
 
 (defun inkscape-make-verb-method (name doc)
   (eval `(defmethod ,(intern (inkscape-transform-method-name "inkverb" name))
-           ((this ,(object-class inkscape-desktop)));;inkscape-desktop must be initialized
+           ((this 'org\.freedesktop\.DBus\.Introspectable-org\.freedesktop\.DBus\.Properties-org\.inkscape\.document
+             ;;,(object-class inkscape-desktop) ;;inkscape-desktop must be initialized
+                  ))
            ,doc
            (inkdoc-call-verb this ,name))))
 
@@ -159,15 +161,21 @@
 ;;TODO
 ;; should be buffer local
 ;; seems to create an inkscape instance mysteriously
-(setq inkscape-desktop (inkscape-document-dbus-proxy-create "desktop_0"))
+;;(setq inkscape-desktop (inkscape-document-dbus-proxy-create "desktop_0"))
 ;;(setq inkscape-desktop-1 (inkscape-document-dbus-proxy-create "desktop_1"))
 
 (defun inkscape-local-instance ()
+  "create a buffer local instance of inkscape"
   ;;TODO this needs more cleverness
   ;;handle closing of ink desktop etc
-  (let ((newdesk (car (last (split-string (inkapp-desktop-new inkscape-application ) "/")))))
-    (set (make-local-variable 'inkscape-desktop) (inkscape-document-dbus-proxy-create newdesk)))))
+  (unless inkscape-desktop
+    (let ((newdesk (car (last (split-string (inkapp-desktop-new inkscape-application ) "/")))))
+      (set (make-local-variable 'inkscape-desktop) (inkscape-document-dbus-proxy-create newdesk)))))
 
+(defun inkscape-local-instance-close ()
+  (inkdoc-close inkscape-desktop)
+  (setq inkscape-desktop nil))
+  
 ;;;;;;;;;;;;;;;;;;;;;;;;;,,
 ;;image mode adapter code
 (defun inkscape-open-buffer-file ()
@@ -312,7 +320,11 @@ node, or update the node if it already exists."
       (inkorg-create-text-node))))
 
 (define-minor-mode inkorg-mode "inkorg" nil " inkorg"
-  '(( "\e\C-x" . inkorg-create-or-update-text)))
+  '(( "\e\C-x" . inkorg-create-or-update-text))
+  (if inkorg-mode (inkscape-local-instance)
+    (inkscape-local-instance-close))
+    
+  )
   
 (defun inkmacs-node-exists (desk name)
   "see if an inkscape object exists"
