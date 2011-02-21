@@ -160,14 +160,27 @@
 ;; should be buffer local
 ;; seems to create an inkscape instance mysteriously
 (setq inkscape-desktop (inkscape-document-dbus-proxy-create "desktop_0"))
+;;(setq inkscape-desktop-1 (inkscape-document-dbus-proxy-create "desktop_1"))
+
+(defun inkscape-local-instance ()
+  ;;TODO this needs more cleverness
+  ;;handle closing of ink desktop etc
+  (let ((newdesk (car (last (split-string (inkapp-desktop-new inkscape-application ) "/")))))
+    (set (make-local-variable 'inkscape-desktop) (inkscape-document-dbus-proxy-create newdesk)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;,,
 ;;image mode adapter code
 (defun inkscape-open-buffer-file ()
   (interactive)
   ;;TODO check that the buffer contains a SVG file
-  ;;BUG funnily crashes if called twice on the same desktop object
+  ;;BUG funnily crashes if called twice on the same desktop object(not reproducible)
+  ;;inkdoc-load is awkward:
+  ;; - 1st open happens inside "virgin" desktop
+  ;; - subsequent opens happen in new desktops
+  ;; - the resulting desktop name isnt returned
+  (inkscape-local-instance)
   (inkdoc-load inkscape-desktop  (buffer-file-name)))
+  
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;inkscape org integration - the pride of inkmacs
