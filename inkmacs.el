@@ -61,7 +61,7 @@
 
 ;;(dbus-introspect :session "org.inkscape" "/org/inkscape")
 (defcustom inkscape-path
-  "/home/joakim/build_myprojs/inkscape/inkscape/src/inkscape"
+  "inkscape"
   "path to dbus-enabled inkscape")
 
 (defvar inkscape-desktop-name "desktop_0"
@@ -87,7 +87,7 @@ then we have buffer local instances.")
   (setq inkscape-application (inkscape-app-dbus-proxy-create)) ;;seems to bring up an inkscape window
   (setq inkscape-desktop-dummy (inkscape-document-dbus-proxy-create inkscape-desktop-name))
   (message "registering inkscape verb proxies")
-  (inkscape-make-verb-list)
+  (inkscape-make-verb-list) ;;TODO sometimes this simply doesnt execute. wtf?
   (message "emacs-inkscape bridge ready for action!")
   (setq inkscape-proxies-registered t))
 
@@ -215,6 +215,9 @@ slow the first time, then not so bad."
 ;; - build a list A of all inkscape objects using select-all
 ;; - build a list B of all inkorg nodes by iterating the org tree and extracting the id
 ;; oh wait - I dont know which A:s used to be inkorg nodes. aargh!
+;; inkscape groups cant really be used because it changes behaviourp
+;; the only reasonable alternative seems to be to use a naming convention:
+;; inkmacs-<type>-<orgid>
 
 
 (defun inkorg-create-text-group()
