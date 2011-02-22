@@ -202,17 +202,26 @@ slow the first time, then not so bad."
 (defvar inkorg-y 0)
 
 (defun inkorg-create-or-update-text (do-tree)
+  "updates the current org node or subtree"
   (interactive "P")
   (if do-tree
       (inkorg-create-text-group)
     (inkorg-create-or-update-text-node))
  ) 
 
+;;TODO if a node has been removed from the org doc it should also be
+;;removed from the ink doc. this is however a bit tricky.
+;; naive method to find orphan nodes:
+;; - build a list A of all inkscape objects using select-all
+;; - build a list B of all inkorg nodes by iterating the org tree and extracting the id
+;; oh wait - I dont know which A:s used to be inkorg nodes. aargh!
+
+
 (defun inkorg-create-text-group()
-  (interactive)
   "traverse an org tree and create text nodes.
 the nodes will be placed on the document canvas according to a simple pattern
 the first time. the nodes will retain position later."
+  (interactive)
   (setq inkorg-x 0  inkorg-y 0);;todo refactor
 
   (org-map-entries 'inkorg-create-or-update-text-node nil 'tree 'comment)
