@@ -252,37 +252,47 @@ the first time. the nodes will retain position later."
     ))
     
     
+(defun org-get-entry-2 ()
+  "Get the entry text, after heading, entire subtree."
+  (save-excursion
+    (org-back-to-heading t)
+    (buffer-substring (point-at-bol 2)  (progn (forward-line) (search-forward "*" nil t)))))
 
 (defun inkorg-entry-text ()
   "extract text from current org node, in a format suitable to
 create an inkscap text node from.
 asterisks and properties are removed."
-  (let ((text (concat (org-get-heading) "\n" (org-get-entry))))
+  (let ((text  (concat (org-get-heading) "\n" (org-get-entry-2))))
     (set-text-properties 0 (length text) nil text )
-    (substring text 0 (string-match org-property-start-re text))))
+    
+    (concat
+     (substring text 0 (string-match org-property-start-re text))
+     (if (string-match org-property-end-re text)
+       (substring text (progn (string-match org-property-end-re text) (match-end 0)) (length text))))))
 
 
 (defun inkorg-create-text-node ()
   "create a corresponding inkscape text node from the current org node."
   (interactive)
 
-  ;;placement
-  (if (= 2 (org-outline-level));;todo refactor
+  ;;placement ;;TODO refactor, enable different placement algorithms
+  (if (= 2 (org-outline-level))
       (progn
         (setq inkorg-x (+ 400 inkorg-x))
         (setq inkorg-y 0)))
   (setq inkorg-y (+ 200 inkorg-y))
 
   ;;create text node
-  (let* ((text (inkorg-entry-text))
+  (let* ((text (inkorg-entry-text);;TODO enable different text extraction functions
+               )
          (id (org-id-get nil t))
-         (flow-node (inkdoc-rectangle inkscape-desktop inkorg-x inkorg-y 200 200))  ;; create text flow rectangle
+         (flow-node (inkdoc-rectangle inkscape-desktop inkorg-x inkorg-y 200 200))  ;; create text flow rectangle TODO enable size formatting
          (flow-id (concat id "-flow"))
          (text-node (inkdoc-text inkscape-desktop inkorg-x inkorg-y text)))
     (inkdoc-set-attribute inkscape-desktop text-node "id" id)
     (inkdoc-set-attribute inkscape-desktop flow-node "id" flow-id)
     ;;link text flow frame and text node
-    (inkdoc-set-color inkscape-desktop flow-id 255 255 255 t)
+    (inkdoc-set-color inkscape-desktop flow-id 255 255 255 t) ;;TODO enable formatting of flow frame
     ;;   select both objects
     (inkdoc-selection-set-list inkscape-desktop (list flow-id id))
     (inkverb-object-flow-text inkscape-desktop) ;;text sshall be flowed in the frame
