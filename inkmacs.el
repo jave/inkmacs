@@ -107,8 +107,8 @@ then we have buffer local instances.")
 
 (defun inkscape-make-verb-method (name doc)
   (eval `(defmethod ,(intern (inkscape-transform-method-name "inkverb" name))
-           ((this ;;   'org\.freedesktop\.DBus\.Introspectable-org\.freedesktop\.DBus\.Properties-org\.inkscape\.document
-             ,(object-class inkscape-desktop) ;;inkscape-desktop must be initialized
+           ((this    org.freedesktop.DBus.Introspectable-org.freedesktop.DBus.Properties-org.inkscape.document
+             ;;                     ,(object-class inkscape-desktop-dummy) ;;inkscape-desktop must be initialized
                   ))
            ,doc
            (inkdoc-call-verb this ,name))))
@@ -297,9 +297,9 @@ asterisks and properties are removed."
   ;;create text node
   (let* ((text (inkorg-entry-text);;TODO enable different text extraction functions
                )
-         (id (org-id-get nil t))
+         (id (concat "inkmacs-text-" (org-id-get nil t)))
          (flow-node (inkdoc-rectangle inkscape-desktop inkorg-x inkorg-y 200 200))  ;; create text flow rectangle TODO enable size formatting
-         (flow-id (concat id "-flow"))
+         (flow-id (concat "inkmacs-flow-" (org-id-get nil t)))
          (text-node (inkdoc-text inkscape-desktop inkorg-x inkorg-y text)))
     (inkdoc-set-attribute inkscape-desktop text-node "id" id)
     (inkdoc-set-attribute inkscape-desktop flow-node "id" flow-id)
