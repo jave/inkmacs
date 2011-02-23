@@ -6,59 +6,9 @@
 
 ;;; Commentary:
 ;; 
-
 ;;Experimental integration between inkscape and Emacs using dbus.
+;; See README.org
 
-;;Currently needs bleeding edge versions of a number of components.
-;; - trunk version of inkscape with dbus enabled (see note below)
-;; - trunk version of Eieio(needs a change which hasnt been merged downstream)
-;; - trunk version of Jan Moringen dbus-proxy
-;; - Emacs 23(i use Emacs from trunk, but 23 should be ok)
-
-;;If you accept that all this really is bleeding edge for real, and
-;;not something i just say, controling inkscape from Emacs is rather
-;;fun! If you furthermore use my inkscape branch mentioned below,
-;;inkmacs even aproaches usable!
-
-;; the long term goal is to make an Emacs that does things quickly
-;;  that currently inhibits creative flow with inkscape.  In
-;;  particular I want to make a framework that supports specialized
-;;  workflows, such as producing sketches for blog entries and web comics.
-;; so, when inspiration hits you: m-x inkscape-blog-sketch,
-;;rather than fiddling about in menus etc until you loose inspiration.
-
-;;, for this we want to:
-;; - make the xwidget Emacs branch usable, so inkscape can be embedded in Emacs
-;; - make inkscape support xembed, so it can be embedded in Emacs
-;; - make an inkscape mode that shows just the canvas
-;; - make an Emacs inkscape control mode that implements a proper Emacs ui on top of inkscape
-;; - somehow implement the Emacs buffer model with inkscape
-;; - implement a form of OLE:
-;;  - display svg images inline muse-mode org org mode for example(this is already mostly possible)
-;;  - edit the svg inside inkscape when desired
-
-;; very important is to support text editing in Emacs.  nodes in an outline-mode
-;; document should preferably be bound to nodes in the inkscape document.
-
-;; please note that there is an Inkscape branch where I have some
-;; bugfixes for the dbus support:
-;; lp:~joakim-verona/inkscape/dbus-fixes
-;; In particular the ink-org integration wont work at all without the fixes
-
-
-;;check alive
-;;(dbus-ping :session   "org.inkscape" 100)
-
-;;(dbus-introspect-xml :session   "org.inkscape" "/")
-
-;;(dbus-introspect-get-all-nodes :session   "org.inkscape" "/org/inkscape")
-
-;;(dbus-introspect-get-interface :session   "org.inkscape" "/org/inkscape/application" "org.inkscape.application")
-;;(dbus-introspect-get-method-names :session   "org.inkscape" "/org/inkscape/application" "org.inkscape.application")
-;;(dbus-introspect-get-method-names  :session "org.inkscape"  "/org/inkscape/desktop_24" "org.inkscape.document")
-;; (dbus-introspect-get-method  :session "org.inkscape"  "/org/inkscape/desktop_24" "org.inkscape.document" "rectangle")
-
-;;(dbus-introspect :session "org.inkscape" "/org/inkscape")
 ;;; Code:
 
 (require 'dbus)
@@ -98,11 +48,7 @@ then we have buffer local instances.")
   (message "emacs-inkscape bridge ready for action!")
   (setq inkscape-proxies-registered t))
 
-
 ;; call-verb support
-;; inkscape doesnt export all functionality through proper dbus interfaces atm.
-;; there is an older "verb" interface, and a dbus bridge.
-;; here is some code that tries to aproximate the dbus-proxy api for the verb api
 
 (defun inkscape-make-verb-list ()
   "Create wrappers for the Verb API."
@@ -125,11 +71,7 @@ then we have buffer local instances.")
            ,doc
            (inkdoc-call-verb this ,name))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;creating the dbus proxies, using Jan Moringen fantastic
-;;dbus-proxy library. The way emacs dbus integration was meant to be
-
+;;dbus proxies
 
 (defun inkscape-transform-method-name (prefix name)
   "Transform NAME. prepend PREFIX.
@@ -154,11 +96,7 @@ slow the first time, then not so bad."
                (concat "/org/inkscape/" desktop) t)))
     obj))
 
-;;TODO
-;; should be buffer local
-;; seems to create an inkscape instance mysteriously
-;;(setq inkscape-desktop (inkscape-document-dbus-proxy-create "desktop_0"))
-;;(setq inkscape-desktop-1 (inkscape-document-dbus-proxy-create "desktop_1"))
+;;inkscape process management
 
 (defun inkscape-local-instance ()
   "Create a buffer local instance of inkscape."
@@ -174,41 +112,16 @@ slow the first time, then not so bad."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;,,
 ;;image mode adapter code
-(defun inkscape-open-buffer-file ()
+(defun  ()
   "Open buffer file un a local inkscape instance."
   (interactive)
   ;;TODO check that the buffer contains a SVG file
-  ;;BUG funnily crashes if called twice on the same desktop object(not reproducible)
-  ;;inkdoc-load is awkward:
-  ;; - 1st open happens inside "virgin" desktop
-  ;; - subsequent opens happen in new desktops
-  ;; - the resulting desktop name isnt returned
   (inkscape-local-instance)
   (inkdoc-load inkscape-desktop  (buffer-file-name)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;inkscape org integration - the pride of inkmacs
-;;
-
-;; strategy:
-;;   - tree level 1 represents the file
-;;   - tree level 2 is a column heading
-;;   - tree level 3 and lower are placed in the column
-
-;; inkscape text is a little bit unintuitive:
-;; text objects are realy a set of text span objects with separate prperties
-;; but tde api doesnt ouite reflect that because its inconvenient anyway
-;; furthermore the spans dont change after you create them
-
-;; for the purpose of inkorg, its nicer if we handle formating and
-;; wordwrap inside inkscape. to get that we need a text object and
-;; another linked object which determines the shape. they are both handled separately.
-
-;; also note that svg 1.2 isnt finalized so convert to text before publishing:
-;; http://wiki.inkscape.org/wiki/index.php/FAQ#What_about_flowed_text.3F
-
-;; tip: create a ospecal txt layer before inkorg-create-text-group
 
 ;; these values are used to place new nodes
 ;; old nodes will retain their placement
@@ -223,17 +136,6 @@ Argument DO-TREE updates the entire subtree."
       (inkorg-create-text-group)
     (inkorg-create-or-update-text-node))
   )
-
-;;TODO if a node has been removed from the org doc it should also be
-;;removed from the ink doc. this is however a bit tricky.
-;; naive method to find orphan nodes:
-;; - build a list A of all inkscape objects using select-all
-;; - build a list B of all inkorg nodes by iterating the org tree and extracting the id
-;; oh wait - I dont know which A:s used to be inkorg nodes. aargh!
-;; inkscape groups cant really be used because it changes behaviourp
-;; the only reasonable alternative seems to be to use a naming convention:
-;; inkmacs-<type>-<orgid>
-
 
 (defun inkorg-create-text-group()
   "traverse an org tree and create text nodes.

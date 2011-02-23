@@ -7,7 +7,7 @@ Emacs and Inkscape in unholy union.
 :PROPERTIES:
 :ID: 5b9903b4-b0f6-43f0-b8d6-a3d985f12b69
 :END:
-*** There is Org in the mix as well.
+*** There is Orgg in the mix as well.
 Org properties can be used to link to svg nodes!
 m-x inkorg-mode
 and then C-M-x on an org node
@@ -30,7 +30,7 @@ I N K M A C S ?
    :PROPERTIES:
    :ID:       19cb7688-1d05-4086-bc46-e7b828ee3ae4
    :END:
-*** eemacs communicates with inkscape using dbus
+*** Emacs communicates with inkscape using dbus!
     :PROPERTIES:
     :ID:       88a09eaf-e36c-48fb-b8d7-25c610628033
     :END:

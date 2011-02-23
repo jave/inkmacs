@@ -1,0 +1,12 @@
+* file
+  :PROPERTIES:
+  :ID:       6820fc9a-86b6-487d-bdad-bcbf8fbb8da3
+  :END:
+** Multi buffer support!
+   :PROPERTIES:
+   :ID:       9daeab04-4a68-4b72-a2f9-8bb18122ddf5
+   :END:
+** newnode
+   :PROPERTIES:
+   :ID:       980f1acf-05f3-49be-92b6-e80d5ca423e0
+   :END:
