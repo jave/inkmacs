@@ -1,4 +1,4 @@
-;; inkmacs.el -- experimental emacs/inkscape bridge
+;; inkmacs.el -- Inkscape Emacs fusion
 ;; (c) fsf 2010, 2011
 ;; author:joakim verona
 ;; license:gpl
@@ -6,11 +6,6 @@
 
 ;;; Commentary:
 ;; 
-
-(require 'dbus)
-(require 'dbus-introspection)
-
-(require 'dbus-proxy) ;;TODO work around deftest problem
 
 ;;Experimental integration between inkscape and Emacs using dbus.
 
@@ -66,6 +61,10 @@
 ;;(dbus-introspect :session "org.inkscape" "/org/inkscape")
 ;;; Code:
 
+(require 'dbus)
+(require 'dbus-introspection)
+(require 'dbus-proxy)
+
 (defcustom inkscape-path
   "inkscape"
   "Path to dbus-enabled inkscape.")
@@ -118,8 +117,8 @@ then we have buffer local instances.")
   "Create a Verb wrapper.  NAME is the verb DOC a docstring."
   (eval `(defmethod ,(intern (inkscape-transform-method-name "inkverb" name))
            ((this    org.freedesktop.DBus.Introspectable-org.freedesktop.DBus.Properties-org.inkscape.document
-             ;;                     ,(object-class inkscape-desktop-dummy) ;;inkscape-desktop must be initialized
-                  ))
+                     ;;                     ,(object-class inkscape-desktop-dummy) ;;inkscape-desktop must be initialized
+                     ))
            ,doc
            (inkdoc-call-verb this ,name))))
 
@@ -169,7 +168,7 @@ slow the first time, then not so bad."
   "Close the local inkscape instance."
   (inkdoc-close inkscape-desktop)
   (setq inkscape-desktop nil))
-  
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;,,
 ;;image mode adapter code
 (defun inkscape-open-buffer-file ()
@@ -183,7 +182,7 @@ slow the first time, then not so bad."
   ;; - the resulting desktop name isnt returned
   (inkscape-local-instance)
   (inkdoc-load inkscape-desktop  (buffer-file-name)))
-  
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;inkscape org integration - the pride of inkmacs
@@ -220,7 +219,7 @@ Argument DO-TREE updates the entire subtree."
   (if do-tree
       (inkorg-create-text-group)
     (inkorg-create-or-update-text-node))
- )
+  )
 
 ;;TODO if a node has been removed from the org doc it should also be
 ;;removed from the ink doc. this is however a bit tricky.
@@ -276,8 +275,8 @@ Argument INKORG-SELECT filters the nodes to select."
     (inkdoc-selection-add inkscape-desktop id)
     (inkdoc-selection-add inkscape-desktop (concat id "-flow"))
     ))
-    
-    
+
+
 (defun org-get-entry-2 ()
   "Get the entry text, after heading, to nex heading, or eof."
   (save-excursion
@@ -286,7 +285,7 @@ Argument INKORG-SELECT filters the nodes to select."
           (p2 (progn (forward-line) (search-forward "*" nil t))))
       (setq p2 (if (null p2) (point-max)
                  (1- p2)))
-    (buffer-substring p1  p2))))
+      (buffer-substring p1  p2))))
 
 (defun inkorg-entry-text ()
   "Extract text from current org node.
@@ -299,7 +298,7 @@ asterisks and properties are removed."
     (concat
      (substring text 0 (string-match org-property-start-re text))
      (if (string-match org-property-end-re text)
-       (substring text (progn (string-match org-property-end-re text) (match-end 0)) (length text))))))
+         (substring text (progn (string-match org-property-end-re text) (match-end 0)) (length text))))))
 
 
 (defun inkorg-create-text-node ()
@@ -347,9 +346,9 @@ node, or update the node if it already exists."
   '(( "\e\C-x" . inkorg-create-or-update-text))
   (if inkorg-mode (inkscape-local-instance)
     (inkscape-local-instance-close))
-    
-  )
   
+  )
+
 (defun inkmacs-node-exists (desk name)
   "See if an inkscape object exists.
 Argument DESK inkscape desktop.
@@ -357,7 +356,7 @@ Argument NAME name of object."
   ;;inkscpe throws an error if it doesnt, so we catch it instead
   (condition-case err
       (inkdoc-get-attribute   desk name "id")
-      (error nil)))
+    (error nil)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -388,9 +387,6 @@ Inkscape needs to be running 1st. this test doesnt use the dbus-proxy."
               :session "org.inkscape" desktop
               "org.inkscape.document" "rectangle" :int32 100 :int32  100 :int32  100 :int32  100)))))
 
-
-
-(provide 'inkscape)
 
 
 (provide 'inkmacs)
