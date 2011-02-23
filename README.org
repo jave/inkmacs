@@ -1,0 +1,131 @@
+* INKMACS - Inkscape Emacs fusion
+** What is Inkmacs?
+Inkmacs is a fusion between Inkscape and Emacs. Well, in the far
+future at least. But its kind of cool right now also.
+
+Inkscape is a very capable free software vector drawing tool. Emacs is
+the One True Editor. 
+
+With Inkmacs you can use Emacs to do interesting things with Inkscape
+using DBUS IPC.
+
+** Inkorg-mode
+Synchronize Inkscape text nodes with Org mode text nodes.
+
+Edit an Org mode file as usual. m-x inkorg-mode starts a linked
+inkscape node. c-m-x creates or syncs the text of the current org node
+with an inkscape node. c-u c-m-x syncs the whole tree.
+
+You can move the nodes and format the text in inkscape. only the text
+is kept in the org tree.
+
+** image mode support
+Create Elisp macros that perform Inkscape edit operations
+
+m-x inkscape-open-buffer-file opens the svg file in the current emacs
+buffer in inkscape. A dbus link is established.
+
+* Technical Discussion
+** Dependencies
+Currently needs bleeding edge versions of a number of components.
+ - trunk version of inkscape with dbus enabled (see note below)
+ - trunk version of Eieio(needs a change which hasnt been merged downstream)
+ - trunk version of Jan Moringen dbus-proxy
+ - Emacs 23(i use Emacs from trunk, but 23 should be ok)
+
+ please note that there is an Inkscape branch where I have some
+ bugfixes for the dbus support:
+ lp:~joakim-verona/inkscape/dbus-fixes
+ In particular the ink-org integration wont work at all without the fixes
+
+** long-term goal
+ the long term goal is to make an Emacs that does things quickly
+  that currently inhibits creative flow with inkscape.  In
+  particular I want to make a framework that supports specialized
+  workflows, such as producing sketches for blog entries and web comics.
+ so, when inspiration hits you: m-x inkscape-blog-sketch,
+rather than fiddling about in menus etc until you loose inspiration.
+I am also interested in building a presentation tool on top of the
+  inkmacs org integration.
+
+For this we want to:
+ - make the xwidget Emacs branch usable, so inkscape can be embedded in Emacs
+ - make inkscape support xembed, so it can be embedded in Emacs(I have
+   a branch on launchpad for this)
+ - make an inkscape mode that shows just the canvas(maybe using inkview)
+ - make an Emacs inkscape control mode that implements a proper Emacs ui on top of inkscape
+ - somehow implement the Emacs buffer model with inkscape
+ - implement a form of OLE:
+  - display svg images inline muse-mode org org mode for example(this is already mostly possible)
+  - edit the svg inside inkscape when desired
+
+ very important is to support text editing in Emacs.  nodes in an outline-mode
+ document should preferably be bound to nodes in the inkscape document.
+
+** some test code snippets
+check alive
+(dbus-ping :session   "org.inkscape" 100)
+
+(dbus-introspect-xml :session   "org.inkscape" "/")
+
+(dbus-introspect-get-all-nodes :session   "org.inkscape" "/org/inkscape")
+
+(dbus-introspect-get-interface :session   "org.inkscape" "/org/inkscape/application" "org.inkscape.application")
+(dbus-introspect-get-method-names :session   "org.inkscape" "/org/inkscape/application" "org.inkscape.application")
+(dbus-introspect-get-method-names  :session "org.inkscape"  "/org/inkscape/desktop_24" "org.inkscape.document")
+ (dbus-introspect-get-method  :session "org.inkscape"  "/org/inkscape/desktop_24" "org.inkscape.document" "rectangle")
+
+(dbus-introspect :session "org.inkscape" "/org/inkscape")
+
+** the verb proxies
+ inkscape doesnt export all functionality through proper dbus interfaces atm.
+ there is an older "verb" interface, and a dbus bridge.
+ here is some code that tries to aproximate the dbus-proxy api for the verb api
+
+** the dbus proxies
+creating the dbus proxies, using Jan Moringen fantastic
+dbus-proxy library. The way emacs dbus integration was meant to be
+
+** inkdoc load issue
+  BUG funnily crashes if called twice on the same desktop object(not reproducible)
+  inkdoc-load is awkward:
+   - 1st open happens inside "virgin" desktop
+   - subsequent opens happen in new desktops
+   - the resulting desktop name isnt returned
+
+
+** inkscape org integration
+inkscape org integration - the pride of inkmacs
+
+m-x inkorg-mode
+
+ strategy:
+   - tree level 1 represents the file
+   - tree level 2 is a column heading
+   - tree level 3 and lower are placed in the column
+
+ inkscape text is a little bit unintuitive:
+ text objects are realy a set of text span objects with separate prperties
+ but tde api doesnt ouite reflect that because its inconvenient anyway
+ furthermore the spans dont change after you create them
+
+ for the purpose of inkorg, its nicer if we handle formating and
+ wordwrap inside inkscape. to get that we need a text object and
+ another linked object which determines the shape. they are both handled separately.
+
+ also note that svg 1.2 isnt finalized so convert to text before publishing:
+ http://wiki.inkscape.org/wiki/index.php/FAQ#What_about_flowed_text.3F
+
+ tip: create a special txt layer before inkorg-create-text-group
+
+** strategy for orphaned nodes
+
+TODO if a node has been removed from the org doc it should also be
+removed from the ink doc. this is however a bit tricky.
+ naive method to find orphan nodes:
+ - build a list A of all inkscape objects using select-all
+ - build a list B of all inkorg nodes by iterating the org tree and extracting the id
+ oh wait - I dont know which A:s used to be inkorg nodes. aargh!
+ inkscape groups cant really be used because it changes behaviourp
+ the only reasonable alternative seems to be to use a naming convention:
+ inkmacs-<type>-<orgid>
