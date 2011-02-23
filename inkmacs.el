@@ -94,7 +94,7 @@ then we have buffer local instances.")
   (setq inkscape-application (inkscape-app-dbus-proxy-create)) ;;seems to bring up an inkscape window
   (setq inkscape-desktop-dummy (inkscape-document-dbus-proxy-create inkscape-desktop-name))
   (message "registering inkscape verb proxies")
-  (inkscape-make-verb-list) ;;TODO sometimes this simply doesnt execute. wtf?
+  (inkscape-make-verb-list)
   (message "emacs-inkscape bridge ready for action!")
   (setq inkscape-proxies-registered t))
 
@@ -106,8 +106,11 @@ then we have buffer local instances.")
 
 (defun inkscape-make-verb-list ()
   "Create wrappers for the Verb API."
-  (start-process "inkscape-verb-list" "*inkscape-verb-list*" inkscape-path "--verb-list")
+  (get-buffer-create "*inkscape-verb-list*")
   (with-current-buffer  "*inkscape-verb-list*"
+    (erase-buffer)
+    (call-process inkscape-path nil  "*inkscape-verb-list*" nil "--verb-list")
+
     (goto-char (point-min))
     (while (re-search-forward  "^\\([^:]+\\):\\(.*\\)$" nil t)
       (message "[%s][%s]" (match-string 1) (match-string 2))
