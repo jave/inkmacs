@@ -9,6 +9,8 @@ the One True Editor.
 With Inkmacs you can use Emacs to do interesting things with Inkscape
 using DBUS IPC.
 
+Inkmacs lives here:https://github.com/jave/inkmacs
+
 ** Inkorg-mode
 Synchronize Inkscape text nodes with Org mode text nodes.
 
