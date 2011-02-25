@@ -40,13 +40,14 @@ then we have buffer local instances.")
 (defun inkscape-register-proxies ()
   "Register proxys."
   (interactive)
-  (message "registering dbus proxies")
-  (setq inkscape-application (inkscape-app-dbus-proxy-create)) ;;seems to bring up an inkscape window
-  (setq inkscape-desktop-dummy (inkscape-document-dbus-proxy-create inkscape-desktop-name))
-  (message "registering inkscape verb proxies")
-  (inkscape-make-verb-list)
-  (message "emacs-inkscape bridge ready for action!")
-  (setq inkscape-proxies-registered t))
+  (unless inkscape-proxies-registered
+    (message "registering dbus proxies")
+    (setq inkscape-application (inkscape-app-dbus-proxy-create)) ;;seems to bring up an inkscape window
+    (setq inkscape-desktop-dummy (inkscape-document-dbus-proxy-create inkscape-desktop-name))
+    (message "registering inkscape verb proxies")
+    (inkscape-make-verb-list)
+    (message "emacs-inkscape bridge ready for action!")
+    (setq inkscape-proxies-registered t)))
 
 ;; call-verb support
 
@@ -97,27 +98,33 @@ slow the first time, then not so bad."
     obj))
 
 ;;inkscape process management
-
+;;inkscape-desktop
 (defun inkscape-local-instance ()
   "Create a buffer local instance of inkscape."
   ;;TODO this needs more cleverness
   ;;handle closing of ink desktop etc
   (let ((newdesk (car (last (split-string (inkapp-desktop-new inkscape-application ) "/")))))
-    (set (make-local-variable 'inkscape-desktop) (inkscape-document-dbus-proxy-create newdesk))))
+    (set (make-local-variable 'inkscape-desktop-instance) (inkscape-document-dbus-proxy-create newdesk))))
 
 (defun inkscape-local-instance-close ()
   "Close the local inkscape instance."
-  (inkdoc-close inkscape-desktop)
-  (setq inkscape-desktop nil))
+  (inkdoc-close (inkscape-desktop))
+  (setq inkscape-desktop-instance nil))
 
+(defun inkscape-desktop ()
+  "Return the inkscape desktop suitable for the context."
+  ;;TODO the inkscape instance is user visible and can go away unexpectedly if the user closes it
+  ;;so we should do some sanity checking here
+  
+  inkscape-desktop-instance)
 ;;;;;;;;;;;;;;;;;;;;;;;;;,,
 ;;image mode adapter code
-(defun  ()
+(defun  inkscape-open-buffer-file ()
   "Open buffer file un a local inkscape instance."
   (interactive)
   ;;TODO check that the buffer contains a SVG file
   (inkscape-local-instance)
-  (inkdoc-load inkscape-desktop  (buffer-file-name)))
+  (inkdoc-load (inkscape-desktop)  (buffer-file-name)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -140,7 +147,7 @@ Argument DO-TREE updates the entire subtree."
 (defun inkorg-create-text-group()
   "traverse an org tree and create text nodes.
 the nodes will be placed on the document canvas according to a simple pattern
-the first time. the nodes will retain position later."
+the first time. the nodes will retain position if repositioned manually later."
   (interactive)
   (setq inkorg-x 0  inkorg-y 0);;todo refactor
 
@@ -177,8 +184,8 @@ Argument INKORG-SELECT filters the nodes to select."
 (defun inkorg-select-node ()
   "Select the text and flow objects in inkscape corresponding to the org node."
   (let* ((id (org-id-get nil t)))
-    (inkdoc-selection-add inkscape-desktop id)
-    (inkdoc-selection-add inkscape-desktop (concat id "-flow"))
+    (inkdoc-selection-add (inkscape-desktop) id)
+    (inkdoc-selection-add (inkscape-desktop) (concat id "-flow"))
     ))
 
 
@@ -221,20 +228,20 @@ asterisks and properties are removed."
   (let* ((text (inkorg-entry-text);;TODO enable different text extraction functions
                )
          (id (concat "inkmacs-text-" (org-id-get nil t)))
-         (flow-node (inkdoc-rectangle inkscape-desktop inkorg-x inkorg-y 200 200))  ;; create text flow rectangle TODO enable size formatting
+         (flow-node (inkdoc-rectangle (inkscape-desktop) inkorg-x inkorg-y 200 200))  ;; create text flow rectangle TODO enable size formatting
          (flow-id (concat "inkmacs-flow-" (org-id-get nil t)))
-         (text-node (inkdoc-text inkscape-desktop inkorg-x inkorg-y text)))
-    (inkdoc-set-attribute inkscape-desktop text-node "id" id)
-    (inkdoc-set-attribute inkscape-desktop flow-node "id" flow-id)
+         (text-node (inkdoc-text (inkscape-desktop) inkorg-x inkorg-y text)))
+    (inkdoc-set-attribute (inkscape-desktop) text-node "id" id)
+    (inkdoc-set-attribute (inkscape-desktop) flow-node "id" flow-id)
     ;;link text flow frame and text node
-    (inkdoc-set-color inkscape-desktop flow-id 255 255 255 t) ;;TODO enable formatting of flow frame
+    (inkdoc-set-color (inkscape-desktop) flow-id 255 255 255 t) ;;TODO enable formatting of flow frame
     ;;   select both objects
-    (inkdoc-selection-set-list inkscape-desktop (list flow-id id))
-    (inkverb-object-flow-text inkscape-desktop) ;;text sshall be flowed in the frame
+    (inkdoc-selection-set-list (inkscape-desktop) (list flow-id id))
+    (inkverb-object-flow-text (inkscape-desktop)) ;;text sshall be flowed in the frame
     ;; were not finished because the text id has changed so change it back
     ;; we rely on the new flow object being selected which seems fragile
-    (inkdoc-set-attribute inkscape-desktop     (car (inkdoc-selection-get inkscape-desktop)) "id" id)
-    (inkdoc-selection-clear  inkscape-desktop)
+    (inkdoc-set-attribute (inkscape-desktop)     (car (inkdoc-selection-get (inkscape-desktop))) "id" id)
+    (inkdoc-selection-clear  (inkscape-desktop))
     ))
 
 (defun inkorg-create-or-update-text-node ()
@@ -243,8 +250,8 @@ node, or update the node if it already exists."
   (interactive);bind to c-m-x
   (let* ((text (inkorg-entry-text))
          (id (concat "inkmacs-text-" (org-id-get nil t))))
-    (if (inkmacs-node-exists inkscape-desktop id)
-        (inkdoc-set-text inkscape-desktop id (inkorg-entry-text))
+    (if (inkmacs-node-exists (inkscape-desktop) id)
+        (inkdoc-set-text (inkscape-desktop) id (inkorg-entry-text))
       (inkorg-create-text-node))))
 
 (define-minor-mode inkorg-mode "inkorg" nil " inkorg"
