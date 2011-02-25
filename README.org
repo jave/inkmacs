@@ -14,18 +14,47 @@ Inkmacs lives here:https://github.com/jave/inkmacs
 ** Inkorg-mode
 Synchronize Inkscape text nodes with Org mode text nodes.
 
-Edit an Org mode file as usual. m-x inkorg-mode starts a linked
-inkscape node. c-m-x creates or syncs the text of the current org node
-with an inkscape node. c-u c-m-x syncs the whole tree.
+Edit an Org mode file as usual.
+
+'m-x inkorg-mode' starts a linked inkscape node.  A dbus link is
+established.
+
+'c-m-x' creates or syncs the text of the current org node with an
+inkscape node. 
+
+'c-u c-m-x' creates or syncs the whole tree.
 
 You can move the nodes and format the text in inkscape. only the text
 is kept in the org tree.
 
-** image mode support
+Since Inkscape is a drawing tool it has different notions of text
+somewhat alien to an Emacs user. Text objects can be bound to 'flow
+frames' which are graphic shapes that bounds the flow of text. By
+default Inkmacs creates rectangles, but its possible to use any shape.
+
+The Inkscape representation of an Org node is thus two objects. One
+flow frame and one text object. 
+
+
+** Image mode support
 Create Elisp macros that perform Inkscape edit operations
 
-m-x inkscape-open-buffer-file opens the svg file in the current emacs
+'m-x inkscape-open-buffer-file' opens the svg file in the current emacs
 buffer in inkscape. A dbus link is established.
+
+** dbus linked inkscape control
+When a dbus link is established from an emacs buffer to an Inkscape
+desktop, it is then possible to call inkdoc or inkverb methods on
+Inkscape.
+
+The inkverb-* methods are interactive and theres a lot of them. So
+'m-x inkverb-calligraphic-prefs' in a buffer using inkorg-minor-mode
+for example, will bring up the calligrapdy preference ui.
+
+The inkverb-* methods are mosty ui related and take no arguments.
+
+The inkdoc-* methods are related to object creation and manipulation
+and are not (yet) declared interactive. 
 
 * Technical Discussion
 ** Dependencies
@@ -121,8 +150,7 @@ m-x inkorg-mode
  tip: create a special txt layer before inkorg-create-text-group
 
 ** strategy for orphaned nodes
-
-TODO if a node has been removed from the org doc it should also be
+*** TODO if a node has been removed from the org doc it should also be
 removed from the ink doc. this is however a bit tricky.
  naive method to find orphan nodes:
  - build a list A of all inkscape objects using select-all
