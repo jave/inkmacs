@@ -65,12 +65,16 @@ then we have buffer local instances.")
 
 (defun inkscape-make-verb-method (name doc)
   "Create a Verb wrapper.  NAME is the verb DOC a docstring."
-  (eval `(defmethod ,(intern (inkscape-transform-method-name "inkverb" name))
-           ((this    org.freedesktop.DBus.Introspectable-org.freedesktop.DBus.Properties-org.inkscape.document
-                     ;;                     ,(object-class inkscape-desktop-dummy) ;;inkscape-desktop must be initialized
-                     ))
-           ,doc
-           (inkdoc-call-verb this ,name))))
+  (let
+      ((method-name (intern (inkscape-transform-method-name "inkverb" name))))
+    (eval `(defmethod ,method-name
+             ((this    org.freedesktop.DBus.Introspectable-org.freedesktop.DBus.Properties-org.inkscape.document
+                       ))
+             ,doc
+             (inkdoc-call-verb this ,name))
+          ;;defmethod doesnt support interactive declarations so i add it afterwards
+          )
+    (put method-name 'interactive-form '(interactive (list (inkscape-desktop))))))
 
 ;;dbus proxies
 
