@@ -103,10 +103,13 @@ slow the first time, then not so bad."
 
 ;;inkscape process management
 ;;inkscape-desktop
-(defun inkscape-local-instance ()
+(defun inkscape-local-instance (&optional force)
   "Create a buffer local instance of inkscape."
   ;;TODO this needs more cleverness
   ;;handle closing of ink desktop etc
+  (interactive)
+  (if (and (not force) inkscape-desktop-instance)
+      (error "There already is a linked inkscape. Try calling with arg to force."))
   (let ((newdesk (car (last (split-string (inkapp-desktop-new inkscape-application ) "/")))))
     (set (make-local-variable 'inkscape-desktop-instance) (inkscape-document-dbus-proxy-create newdesk))))
 
@@ -115,12 +118,21 @@ slow the first time, then not so bad."
   (inkdoc-close (inkscape-desktop))
   (setq inkscape-desktop-instance nil))
 
+
+(defmethod inkscape-desktop-alive ( (this org\.freedesktop\.DBus\.Introspectable-org\.freedesktop\.DBus\.Properties-org\.inkscape\.document))
+  "Check if the desktop is alive."
+  ;;todo make this method actually work
+  (dbus-introspect-get-method-names  :session "org.inkscape"
+                                       (oref this object)
+                                       "org.inkscape.document"))
+
 (defun inkscape-desktop ()
   "Return the inkscape desktop suitable for the context."
   ;;TODO the inkscape instance is user visible and can go away unexpectedly if the user closes it
   ;;so we should do some sanity checking here
-  
-  inkscape-desktop-instance)
+  (if       (inkscape-desktop-alive inkscape-desktop-instance)
+      inkscape-desktop-instance
+    (error "It seems the desktop is gone. Maybe you closed it. Try m-x inkscape-local-instance to relink.")))
 ;;;;;;;;;;;;;;;;;;;;;;;;;,,
 ;;image mode adapter code
 (defun  inkscape-open-buffer-file ()
