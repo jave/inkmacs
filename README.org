@@ -16,8 +16,11 @@ Synchronize Inkscape text nodes with Org mode text nodes.
 
 Edit an Org mode file as usual.
 
-'m-x inkorg-mode' starts a linked inkscape node.  A dbus link is
-established.
+'m-x inkmacs-edit' starts a linked inkscape instance. The svg file
+name is derived from the root node.  inkorg-minor-mode is enabled,
+which in turn enables the inkorg mode map detailed below.
+
+Each root node can have its own inkscape document.
 
 'c-m-x' creates or syncs the text of the current org node with an
 inkscape node. 
@@ -35,11 +38,19 @@ default Inkmacs creates rectangles, but its possible to use any shape.
 The Inkscape representation of an Org node is thus two objects. One
 flow frame and one text object. 
 
+It can be a little tricky to select the object you want to work with. 
+inkorg-mode has (embryonic) support:
+
+'m-x inkorg-select-tree' selects all corresponding inkscape nodes.
+With argument, define a filter:
+'keep-siblings
+'keep-sibling-subtrees
+'keep-subtree
 
 ** Image mode support
 Create Elisp macros that perform Inkscape edit operations
 
-'m-x inkscape-open-buffer-file' opens the svg file in the current emacs
+'m-x inkmacs-edit' opens the svg file in the current emacs
 buffer in inkscape. A dbus link is established.
 
 ** dbus linked inkscape control
@@ -49,7 +60,7 @@ Inkscape.
 
 The inkverb-* methods are interactive and theres a lot of them. So
 'm-x inkverb-calligraphic-prefs' in a buffer using inkorg-minor-mode
-for example, will bring up the calligrapdy preference ui.
+for example, will bring up the calligraphy preference ui.
 
 The inkverb-* methods are mosty ui related and take no arguments.
 

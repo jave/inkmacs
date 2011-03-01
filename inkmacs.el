@@ -103,15 +103,35 @@ slow the first time, then not so bad."
 
 ;;inkscape process management
 ;;inkscape-desktop
-(defun inkscape-local-instance (&optional force)
-  "Create a buffer local instance of inkscape."
+(defvar inkscape-desktop-instances nil)
+
+(defun inkscape-local-instance (file-name &optional force)
+  "Create a context local instance of inkscape."
   ;;TODO this needs more cleverness
   ;;handle closing of ink desktop etc
+  ;;TODO inkorg mode should support more than one desktop
+  ;;todo should also do the file name binding
   (interactive)
-  (if (and (not force) inkscape-desktop-instance)
-      (error "There already is a linked inkscape. Try calling with arg to force."))
+  (if (and (not force) (inkscape-desktop))
+      (error "There already is a linked inkscape. "))
   (let ((newdesk (car (last (split-string (inkapp-desktop-new inkscape-application ) "/")))))
-    (set (make-local-variable 'inkscape-desktop-instance) (inkscape-document-dbus-proxy-create newdesk))))
+    (set (make-local-variable 'inkscape-desktop-instance) (inkscape-document-dbus-proxy-create newdesk))
+    (setq inkscape-desktop-instances (acons file-name inkscape-desktop-instance inkscape-desktop-instances))
+    ;;todo inkdoc-load doesnt like if theres no actual file
+    (unless (file-exists-p file-name)
+        (inkmacs-create-empty-svg file-name))
+    (inkdoc-load inkscape-desktop-instance file-name)))
+
+(defun inkmacs-create-empty-svg (file-name)
+  "Create empty svg file."
+  (with-temp-file file-name
+    (insert
+     "<?xml version=\"1.0\" encoding=\"utf-8\"?>
+<svg width=\"100%\" height=\"100%\">
+</svg>
+")
+    (buffer-string)
+    ))
 
 (defun inkscape-local-instance-close ()
   "Close the local inkscape instance."
@@ -127,20 +147,39 @@ slow the first time, then not so bad."
                                        "org.inkscape.document"))
 
 (defun inkscape-desktop ()
-  "Return the inkscape desktop suitable for the context."
+  "Return the inkscape desktop suitable for the context.
+null if there is no desk. error if there is a broken desk."
   ;;TODO the inkscape instance is user visible and can go away unexpectedly if the user closes it
   ;;so we should do some sanity checking here
-  (if       (inkscape-desktop-alive inkscape-desktop-instance)
-      inkscape-desktop-instance
-    (error "It seems the desktop is gone. Maybe you closed it. Try m-x inkscape-local-instance to relink.")))
+  ;;TODO inkorg mode should support more than one desktop
+  (let ((desk (if inkorg-mode
+                  (cdr (assoc (inkorg-svg-file-name) inkscape-desktop-instances))
+                inkscape-desktop-instance)))
+    (if desk
+        (if (inkscape-desktop-alive desk)
+            desk
+          (error "It seems the desktop is gone. Maybe you closed it."))
+      nil)))
+
+(defun inkmacs-edit ()
+  "Inkscape edit the buffer or org tree."
+  (interactive)
+  (cond 
+   ((equal 'image-mode major-mode) ;;TODO check svg
+    (inkscape-open-buffer-file))
+   ((equal 'org-mode major-mode)
+    (progn
+      (inkorg-mode t)
+      (inkscape-local-instance (inkorg-svg-file-name))))
+   (t (error "Don't know how to inkmacs here."))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;,,
 ;;image mode adapter code
 (defun  inkscape-open-buffer-file ()
   "Open buffer file un a local inkscape instance."
   (interactive)
   ;;TODO check that the buffer contains a SVG file
-  (inkscape-local-instance)
-  (inkdoc-load (inkscape-desktop)  (buffer-file-name)))
+  (inkscape-local-instance (buffer-file-name)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -270,11 +309,18 @@ node, or update the node if it already exists."
         (inkdoc-set-text (inkscape-desktop) id (inkorg-entry-text))
       (inkorg-create-text-node))))
 
-(define-minor-mode inkorg-mode "inkorg" nil " inkorg"
-  '(( "\e\C-x" . inkorg-create-or-update-text))
-  (if inkorg-mode (inkscape-local-instance)
-    (inkscape-local-instance-close))
+(defun inkorg-svg-file-name ()
+  "Figure out which svg file to use in this context."
+  (save-excursion
+    (move-beginning-of-line nil)
+    (unless  (= 1 (org-outline-level)) 
+      (org-up-heading-all 100))
+    (let ((file-name (concat  (org-get-heading) ".svg")))
+      (set-text-properties 0 (length file-name) nil file-name)
+      (concat (mapconcat (lambda (e) e) (butlast (split-string (buffer-file-name ) "/")) "/") "/" file-name))))
   
+(define-minor-mode inkorg-mode "inkorg" nil " inkorg"
+  '(( "\e\C-x" . inkorg-create-or-update-text))    
   )
 
 (defun inkmacs-node-exists (desk name)

@@ -1,4 +1,4 @@
-* file
+* linkedtext
   :PROPERTIES:
   :ID:       6820fc9a-86b6-487d-bdad-bcbf8fbb8da3
   :END:
@@ -34,3 +34,11 @@ I N K M A C S ?
     :PROPERTIES:
     :ID:       88a09eaf-e36c-48fb-b8d7-25c610628033
     :END:
+* otherfile
+  :PROPERTIES:
+  :ID:       97ff5adb-4657-42c4-a00e-3aab2ea302aa
+  :END:
+** other linked org file
+   :PROPERTIES:
+   :ID:       52545c16-8301-416b-9484-7144f7bf0ab4
+   :END: 
