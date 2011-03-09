@@ -68,6 +68,9 @@ then we have buffer local instances.")
   (let
       ((method-name (intern (inkscape-transform-method-name "inkverb" name))))
     (eval `(defmethod ,method-name
+             ;;BUG the next line fails in a fresh Emacs.
+             ;;  but works when  inkscape-register-proxies is called.
+             ;;  and then buffer eval works. hmm.
              ((this    org.freedesktop.DBus.Introspectable-org.freedesktop.DBus.Properties-org.inkscape.document
                        ))
              ,doc
@@ -223,25 +226,29 @@ the first time. the nodes will retain position if repositioned manually later."
    (t nil) )
   )
 
-(defun inkorg-select-tree (inkorg-select)
+(defun inkorg-select-tree (inkorg-select text-or-flow)
   "Select the nodes in inkscape corresponding to the org tree.
 Argument INKORG-SELECT filters the nodes to select."
   (interactive
-   (list (if current-prefix-arg (read (completing-read "keep:" '("keep-sibling-subtrees" "keep-siblings" "keep-subtree") )))))
+   (list (if current-prefix-arg
+             (read (completing-read "keep:" '("keep-all" "keep-sibling-subtrees" "keep-siblings" "keep-subtree") )))
+         (if current-prefix-arg (read (completing-read "text-or-flow:" '("both" "text" "flow" ) )))))
   (save-excursion
     (org-back-to-heading)
     (setq inkorg-select-start-level (org-outline-level))
     (unless (or (= 1 (org-outline-level)) (equal inkorg-select 'keep-subtree))
       (org-up-heading-all 100))
-    (org-map-entries 'inkorg-select-node nil 'tree 'inkorg-select-skip))
+    (org-map-entries (lambda () (inkorg-select-node text-or-flow)) nil 'tree 'inkorg-select-skip))
   )
 
-(defun inkorg-select-node ()
+(defun inkorg-select-node (selector)
   "Select the text and flow objects in inkscape corresponding to the org node."
+  (interactive (list 'both))
   (let* ((id (org-id-get nil t)))
-    (inkdoc-selection-add (inkscape-desktop) id)
-    (inkdoc-selection-add (inkscape-desktop) (concat id "-flow"))
-    ))
+    (if (member selector '(text both) )
+        (inkdoc-selection-add  (inkscape-desktop) (inkorg-text-id id)))
+    (if (member selector '(flow both) )
+        (inkdoc-selection-add (inkscape-desktop)  (inkorg-flow-id id) ))))  
 
 
 (defun org-get-entry-2 ()
@@ -268,6 +275,12 @@ asterisks and properties are removed."
          (substring text (progn (string-match org-property-end-re text) (match-end 0)) (length text))))))
 
 
+(defun inkorg-flow-id (id)
+  (concat "inkmacs-flow-" id))
+
+(defun inkorg-text-id (id)
+  (concat "inkmacs-text-" id))
+
 (defun inkorg-create-text-node ()
   "Create a corresponding inkscape text node from the current org node."
   (interactive)
@@ -282,9 +295,9 @@ asterisks and properties are removed."
   ;;create text node
   (let* ((text (inkorg-entry-text);;TODO enable different text extraction functions
                )
-         (id (concat "inkmacs-text-" (org-id-get nil t)))
+         (id (inkorg-text-id (org-id-get nil t)))
          (flow-node (inkdoc-rectangle (inkscape-desktop) inkorg-x inkorg-y 200 200))  ;; create text flow rectangle TODO enable size formatting
-         (flow-id (concat "inkmacs-flow-" (org-id-get nil t)))
+         (flow-id (inkorg-flow-id (org-id-get nil t)))
          (text-node (inkdoc-text (inkscape-desktop) inkorg-x inkorg-y text)))
     (inkdoc-set-attribute (inkscape-desktop) text-node "id" id)
     (inkdoc-set-attribute (inkscape-desktop) flow-node "id" flow-id)
@@ -304,7 +317,7 @@ asterisks and properties are removed."
 node, or update the node if it already exists."
   (interactive);bind to c-m-x
   (let* ((text (inkorg-entry-text))
-         (id (concat "inkmacs-text-" (org-id-get nil t))))
+         (id (inkorg-text-id (org-id-get nil t))))
     (if (inkmacs-node-exists (inkscape-desktop) id)
         (inkdoc-set-text (inkscape-desktop) id (inkorg-entry-text))
       (inkorg-create-text-node))))
