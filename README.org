@@ -62,10 +62,15 @@ The inkverb-* methods are interactive and theres a lot of them. So
 'm-x inkverb-calligraphic-prefs' in a buffer using inkorg-minor-mode
 for example, will bring up the calligraphy preference ui.
 
-The inkverb-* methods are mosty ui related and take no arguments.
+The inkverb-* methods are mostly ui related and take no arguments.
 
 The inkdoc-* methods are related to object creation and manipulation
 and are not (yet) declared interactive. 
+
+Finding the right Inkscape operation in Emacs can actualy be much more
+efficient than using the menus in Inkscape. Especialy if you use some
+M-x booster such as Anything or Icicles. 
+ 
 
 * Technical Discussion
 ** Dependencies
@@ -134,7 +139,10 @@ dbus-proxy library. The way emacs dbus integration was meant to be
    - 1st open happens inside "virgin" desktop
    - subsequent opens happen in new desktops
    - the resulting desktop name isnt returned
-
+** changing name of root inkorg node.
+doesnt really work because the name is used to link to the svg file. a
+property can be added to override the file name. a better error is
+needed to show the error is unlinked file.
 
 ** inkscape org integration
 inkscape org integration - the pride of inkmacs
