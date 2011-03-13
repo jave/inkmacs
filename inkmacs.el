@@ -163,7 +163,7 @@ null if there is no desk. error if there is a broken desk."
   ;;TODO inkorg mode should support more than one desktop
   (let ((desk (if inkorg-mode
                   (cdr (assoc (inkorg-svg-file-name) inkscape-desktop-instances))
-                inkscape-desktop-instance)))
+                (if (boundp 'inkscape-desktop-instance) inkscape-desktop-instance))))
     (if desk
         (if (inkscape-desktop-alive desk)
             desk
