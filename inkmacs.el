@@ -141,6 +141,12 @@ slow the first time, then not so bad."
   (inkdoc-close (inkscape-desktop))
   (setq inkscape-desktop-instance nil))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;initialize bridge
+;;since we need the dummy desktop in order for the dbus classes to exist
+;;it must be called before method definitions
+(inkscape-register-proxies)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmethod inkscape-desktop-alive ( (this org\.freedesktop\.DBus\.Introspectable-org\.freedesktop\.DBus\.Properties-org\.inkscape\.document))
   "Check if the desktop is alive."
@@ -199,8 +205,8 @@ Argument DO-TREE updates the entire subtree."
   (interactive "P")
   (if do-tree
       (inkorg-create-text-group)
-    (inkorg-create-or-update-text-node))
-  )
+    (inkorg-create-or-update-text-node)))
+
 
 (defun inkorg-create-text-group()
   "traverse an org tree and create text nodes.
@@ -209,8 +215,8 @@ the first time. the nodes will retain position if repositioned manually later."
   (interactive)
   (setq inkorg-x 0  inkorg-y 0);;todo refactor
 
-  (org-map-entries 'inkorg-create-or-update-text-node nil 'tree 'comment)
-  )
+  (org-map-entries 'inkorg-create-or-update-text-node nil 'tree 'comment))
+
 
 ;;(defvar inkorg-select 'keep-subtree);;todo should be let bound local
 (defvar inkorg-select-start-level 0);;todo should be let bound local
@@ -223,8 +229,8 @@ the first time. the nodes will retain position if repositioned manually later."
    ((eq inkorg-select 'keep-sibling-subtrees)
     (if (>= (org-outline-level) inkorg-select-start-level) nil t))
    ((eq inkorg-select 'keep-subtree) nil)
-   (t nil) )
-  )
+   (t nil) ))
+
 
 (defun inkorg-select-tree (inkorg-select text-or-flow)
   "Select the nodes in inkscape corresponding to the org tree.
@@ -238,8 +244,9 @@ Argument INKORG-SELECT filters the nodes to select."
     (setq inkorg-select-start-level (org-outline-level))
     (unless (or (= 1 (org-outline-level)) (equal inkorg-select 'keep-subtree))
       (org-up-heading-all 100))
-    (org-map-entries (lambda () (inkorg-select-node text-or-flow)) nil 'tree 'inkorg-select-skip))
-  )
+    (org-map-entries (lambda () (inkorg-select-node text-or-flow))
+                     nil 'tree 'inkorg-select-skip)))
+
 
 (defun inkorg-select-node (selector)
   "Select the text and flow objects in inkscape corresponding to the org node."
@@ -346,9 +353,6 @@ Argument NAME name of object."
     (error nil)))
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;initialize bridge
-(inkscape-register-proxies)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
