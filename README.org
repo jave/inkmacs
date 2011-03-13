@@ -163,10 +163,23 @@ m-x inkorg-mode
  wordwrap inside inkscape. to get that we need a text object and
  another linked object which determines the shape. they are both handled separately.
 
- also note that svg 1.2 isnt finalized so convert to text before publishing:
+ Also note that svg 1.2 isn't finalized:
  http://wiki.inkscape.org/wiki/index.php/FAQ#What_about_flowed_text.3F
 
- tip: create a special txt layer before inkorg-create-text-group
+In practice this means that early 2011 the flow text nodes won't show
+up if you try to render the image in Firefox or Webkit based browsers.
+librsvg2 which is used in Emacs won't work either. This is hardly
+convenient. I'm investigating two non-mutex ways forward: 
+- rendering the svg image to another image format on demand
+inkverb-file-export 
+
+- optionaly use the textspan object rather than the flowroot. Then you
+  would have to handle text line break in Emacs which might be okay
+  for some cases.
+
+
+
+ tip: create a special text layer before inkorg-create-text-group
 
 ** strategy for orphaned nodes
 *** TODO if a node has been removed from the org doc it should also be
