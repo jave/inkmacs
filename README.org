@@ -78,7 +78,13 @@ Currently needs bleeding edge versions of a number of components.
  - trunk version of inkscape with dbus enabled (see note below)
  - trunk version of Eieio(needs a change which hasnt been merged downstream)
  - trunk version of Jan Moringen dbus-proxy
- - Emacs 23(i use Emacs from trunk, but 23 should be ok)
+ - Emacs 23. I use Emacs 24 from trunk, but 23 should be ok. but since
+   everything else is bleeding edge you might as well use a bleeding
+   edge Emacs also.
+
+
+** DONE get Inkmacs bugfixes merged
+   CLOSED: [2011-03-20 Sun 19:44]
 
  please note that there is an Inkscape branch where I have some
  bugfixes for the dbus support:
@@ -108,7 +114,7 @@ For this we want to:
 
  very important is to support text editing in Emacs.  nodes in an outline-mode
  document should preferably be bound to nodes in the inkscape document.
-
+ 
 ** some test code snippets
 check alive
 (dbus-ping :session   "org.inkscape" 100)
