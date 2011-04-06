@@ -218,7 +218,7 @@ the first time. the nodes will retain position if repositioned manually later."
   (org-map-entries 'inkorg-create-or-update-text-node nil 'tree 'comment))
 
 
-;;(defvar inkorg-select 'keep-subtree);;todo should be let bound local
+(defvar inkorg-select 'keep-subtree);;todo should be let bound local
 (defvar inkorg-select-start-level 0);;todo should be let bound local
 
 (defun inkorg-select-skip ()
