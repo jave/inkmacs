@@ -14,6 +14,8 @@
 (require 'dbus)
 (require 'dbus-introspection)
 (require 'dbus-proxy)
+(require 'org)
+(require 'org-exp)
 
 (defcustom inkscape-path
   "inkscape"
@@ -185,7 +187,7 @@ null if there is no desk. error if there is a broken desk."
 ;;;;;;;;;;;;;;;;;;;;;;;;;,,
 ;;image mode adapter code
 (defun  inkscape-open-buffer-file ()
-  "Open buffer file un a local inkscape instance."
+  "Open buffer file on a local inkscape instance."
   (interactive)
   ;;TODO check that the buffer contains a SVG file
   (inkscape-local-instance (buffer-file-name)))
@@ -205,7 +207,9 @@ Argument DO-TREE updates the entire subtree."
   (interactive "P")
   (if do-tree
       (inkorg-create-text-group)
-    (inkorg-create-or-update-text-node)))
+    (progn
+      (inkorg-create-or-update-text-node)
+      (if (called-interactively-p 'any) (inkorg-select-node 'both)))))
 
 
 (defun inkorg-create-text-group()
@@ -243,7 +247,7 @@ Argument INKORG-SELECT filters the nodes to select."
     (org-back-to-heading)
     (setq inkorg-select-start-level (org-outline-level))
     (unless (or (= 1 (org-outline-level)) (equal inkorg-select 'keep-subtree))
-      (org-up-heading-all 100))
+      (org-up-heading-all 100));;TODO refactor. support EXPORT_FILE_NAME
     (org-map-entries (lambda () (inkorg-select-node text-or-flow))
                      nil 'tree 'inkorg-select-skip)))
 
@@ -273,6 +277,7 @@ Argument INKORG-SELECT filters the nodes to select."
 Return a format suitable to
 create an inkscape text node from.
 asterisks and properties are removed."
+  ;;TODO there ought to be some code in org-exp for this somewhere
   (let ((text  (concat (org-get-heading) "\n" (org-get-entry-2))))
     (set-text-properties 0 (length text) nil text )
     
@@ -329,15 +334,59 @@ node, or update the node if it already exists."
         (inkdoc-set-text (inkscape-desktop) id (inkorg-entry-text))
       (inkorg-create-text-node))))
 
+(defun inkorg-apply-text-formatting ()
+  "experimental. needs patched inkscape"
+  (interactive)
+  (let* ((text (inkorg-entry-text))
+         (id (inkorg-text-id (org-id-get nil t))))
+    (inkdoc-text-apply-style (inkscape-desktop) id
+                             0 10 "font-weight" "bold")    )
+  
+
+
+  )
+
 (defun inkorg-svg-file-name ()
   "Figure out which svg file to use in this context."
+  ;;TODO try (org-export-get-title-from-subtree) instead)
+  ;;				 (org-entry-get (region-beginning)  "EXPORT_FILE_NAME" t)
   (save-excursion
-    (move-beginning-of-line nil)
-    (unless  (= 1 (org-outline-level)) 
-      (org-up-heading-all 100))
-    (let ((file-name (concat  (org-get-heading) ".svg")))
-      (set-text-properties 0 (length file-name) nil file-name)
-      (concat (mapconcat (lambda (e) e) (butlast (split-string (buffer-file-name ) "/")) "/") "/" file-name))))
+    (let
+        ((export-file-name (org-entry-get  (region-beginning)  "EXPORT_FILE_NAME" t)))
+      ;;org-entry-property-inherited-from TODO
+      (move-beginning-of-line nil)
+      (unless  (= 1 (org-outline-level)) 
+        (org-up-heading-all 100));;TODO use inkorg-root-node
+      (let ((file-name (concat  (or export-file-name
+                                     (org-get-heading))
+                                ".svg")))
+        (set-text-properties 0 (length file-name) nil file-name)
+        (concat (mapconcat (lambda (e) e) (butlast (split-string (buffer-file-name ) "/")) "/") "/" file-name)))))
+
+
+(defun inkorg-root-node ()
+  "Move point to the image root.
+This is either a node with EXPORT_FILE_NAME set or the level 1 parent."
+  (interactive)
+  (let
+      ((export-file-name (org-entry-get  (region-beginning)  "EXPORT_FILE_NAME" t))
+       (ex-point org-entry-property-inherited-from))
+    (if export-file-name
+        (goto-char  ex-point)
+      (progn
+        (org-back-to-heading)
+        (move-beginning-of-line nil)
+        (unless  (= 1 (org-outline-level)) 
+          (org-up-heading-all 100))))))
+
+(defun inkorg-delete-orphans ()
+  ;;TODO
+  ;; - figure out all inkscape nodes somewhen created by inkmacs, set A
+  ;; - figure out all org nodes from the inkorg root node, set B
+  ;; - remove all As not in B
+  ;; this is potentially destructive so prompt for each inksscape node to be removed
+  )
+
   
 (define-minor-mode inkorg-mode "inkorg" nil " inkorg"
   '(( "\e\C-x" . inkorg-create-or-update-text))    

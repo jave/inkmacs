@@ -75,12 +75,12 @@ M-x booster such as Anything or Icicles.
 * Technical Discussion
 ** Dependencies
 Currently needs bleeding edge versions of a number of components.
- - trunk version of inkscape with dbus enabled (see note below)
+ - trunk version of inkscape with dbus enabled
  - trunk version of Eieio(needs a change which hasnt been merged downstream)
  - trunk version of Jan Moringen dbus-proxy
  - Emacs 23. I use Emacs 24 from trunk, but 23 should be ok. but since
    everything else is bleeding edge you might as well use a bleeding
-   edge Emacs also.
+   edge Emacs also. You know you want to.
 
 
 ** DONE get Inkmacs bugfixes merged
@@ -98,23 +98,38 @@ Currently needs bleeding edge versions of a number of components.
   workflows, such as producing sketches for blog entries and web comics.
  so, when inspiration hits you: m-x inkscape-blog-sketch,
 rather than fiddling about in menus etc until you loose inspiration.
+
 I am also interested in building a presentation tool on top of the
-  inkmacs org integration.
+  inkmacs org integration. This is currently based on org-mode and is
+  called inkorg minor mode in inkmacs. Inkorg seems to be pretty good
+  for the purposes mentioned and is currently the flagsdip UI of Inkmacs.
 
 For this we want to:
- - make the xwidget Emacs branch usable, so inkscape can be embedded in Emacs
- - make inkscape support xembed, so it can be embedded in Emacs(I have
-   a branch on launchpad for this)
- - make an inkscape mode that shows just the canvas(maybe using inkview)
- - make an Emacs inkscape control mode that implements a proper Emacs ui on top of inkscape
- - somehow implement the Emacs buffer model with inkscape
- - implement a form of OLE:
-  - display svg images inline muse-mode org org mode for example(this is already mostly possible)
-  - edit the svg inside inkscape when desired
+*** TODO make the xwidget Emacs branch usable, so inkscape can be embedded
+   in Emacs(this is very far future)
+**** TODO make inkscape support xembed, so it can be embedded in Emacs.
+    I have  a branch on launchpad for this but it has issues and is
+    long term
+**** TODO make an inkscape mode that shows just the canvas.
+maybe using inkview. 
+*** TODO make an Emacs inkscape control mode that implements a proper Emacs
+   ui on top of inkscape. the foundation for this is done. Whats
+   lacking is good bindings.
+*** DONE somehow implement the Emacs buffer model with inkscape
+*** TODO implement a form of OLE.
+display svg images inline muse-mode org org mode for example. this is
+already mostly possible.
 
- very important is to support text editing in Emacs.  nodes in an outline-mode
- document should preferably be bound to nodes in the inkscape document.
+*** DONE edit the svg inside inkscape when desired
+
+*** DONE very important is to support text editing in Emacs.  
+nodes in an outline-mode document should preferably be bound to nodes
+ in the inkscape document.
  
+** TODO an annoying extra inkscape window appears
+happens when the proxies are registered. theres seemingly no straightforward way
+around it.
+
 ** some test code snippets
 check alive
 (dbus-ping :session   "org.inkscape" 100)
@@ -130,27 +145,23 @@ check alive
 
 (dbus-introspect :session "org.inkscape" "/org/inkscape")
 
-** the verb proxies
+** DONE the verb proxies
  inkscape doesnt export all functionality through proper dbus interfaces atm.
  there is an older "verb" interface, and a dbus bridge.
  here is some code that tries to aproximate the dbus-proxy api for the verb api
 
-** the dbus proxies
+** DONE the dbus proxies
 creating the dbus proxies, using Jan Moringen fantastic
 dbus-proxy library. The way emacs dbus integration was meant to be
 
-** inkdoc load issue
+** TODO inkdoc load issue
   BUG funnily crashes if called twice on the same desktop object(not reproducible)
   inkdoc-load is awkward:
    - 1st open happens inside "virgin" desktop
    - subsequent opens happen in new desktops
    - the resulting desktop name isnt returned
-** changing name of root inkorg node.
-doesnt really work because the name is used to link to the svg file. a
-property can be added to override the file name. a better error is
-needed to show the error is unlinked file.
 
-** inkscape org integration
+** DONE inkscape org integration
 inkscape org integration - the pride of inkmacs
 
 m-x inkorg-mode
@@ -187,7 +198,7 @@ inkverb-file-export
 
  tip: create a special text layer before inkorg-create-text-group
 
-** strategy for orphaned nodes
+** TODO strategy for orphaned nodes
 *** TODO if a node has been removed from the org doc it should also be
 removed from the ink doc. this is however a bit tricky.
  naive method to find orphan nodes:
@@ -197,3 +208,24 @@ removed from the ink doc. this is however a bit tricky.
  inkscape groups cant really be used because it changes behaviourp
  the only reasonable alternative seems to be to use a naming convention:
  inkmacs-<type>-<orgid>
+
+** TODO subtree export support
+inkorg mode works sort of like org export but its not always entirely
+the same. Nevertheless inkorg should reuse org export code when possible.
+A big difference is that the svg file is used in tandem with org. it
+is not generated from org like other org exports.
+
+*** TODO changing name of root inkorg node.
+doesnt really work because the name is used to link to the svg file. a
+property can be added to override the file name. a better error is
+needed to show the error is unlinked file.
+
+`EXPORT_FILE_NAME',
+`EXPORT_TITLE',
+
+could be used to override the default file name.
+
+`#+TITLE:' compatibility
+*** CANCELLED [#B] some form ov planner/outline integration that works with ecb
+    CLOSED: [2011-04-17 Sun 01:33]
+org mode does this already.
