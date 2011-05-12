@@ -11,6 +11,18 @@ using DBUS IPC.
 
 Inkmacs lives here:https://github.com/jave/inkmacs
 
+** Real world usability
+Currently I use Inkmacs for a very large technical poster at a
+Client. It has lots of text so Inkmacs is a very suitable tool. 
+
+The Emacs/Inkscape combo is actually surprisingly robust. I experience few
+crashes now.
+
+I have some issues but they are in unexpected areas such as Inkscape
+generated PDF isn't well handled at the printshop. The free PDF
+renderers such as Poppler used by Evince are in fact more robust than
+Adobes so I hadn't noticed any issues at home.
+
 ** Inkorg-mode
 Synchronize Inkscape text nodes with Org mode text nodes.
 
@@ -215,7 +227,8 @@ the same. Nevertheless inkorg should reuse org export code when possible.
 A big difference is that the svg file is used in tandem with org. it
 is not generated from org like other org exports.
 
-*** TODO changing name of root inkorg node.
+*** DONE changing name of root inkorg node.
+    CLOSED: [2011-05-10 Tue 20:02]
 doesnt really work because the name is used to link to the svg file. a
 property can be added to override the file name. a better error is
 needed to show the error is unlinked file.
@@ -229,3 +242,96 @@ could be used to override the default file name.
 *** CANCELLED [#B] some form ov planner/outline integration that works with ecb
     CLOSED: [2011-04-17 Sun 01:33]
 org mode does this already.
+
+
+*** TODO look at org-ascii
+to replace my text extractor
+** TODO support formatted text
+For this we need:
+- support to apply styles to text via ibus in inkscape.
+My dbusfixes branch has this and the prospect of inclusion are good.
+- inkorg support for extracting the org formatting.
+
+The way things work atm this will be a 2 step process. create text,
+then apply styles. 
+
+** TODO better file import wrapper
+Emacs is a great file selecor I'd like to use in order to import clip
+art into a technical drawing for instance.
+
+inkverb-file-import triggers the inkscape import dialogue. I need to
+figure out a way to send the file name as a parameter instead.
+It might turn out I need another dbus interface function.
+
+*** TODO openclipart interface
+An interface to openclipart.organisation on top of this would be useful.
+Inkscape has support for openclipart which is good but in think Nkmacs
+can do better:)
+
+http://www.openclipart.org/detail/90145
+http://www.openclipart.org/people/Anonymous/server_mimooh_01r.svg
+
+
+http://www.openclipart.org/wiki/API
+example search for a server image:
+http://www.openclipart.org/media/feed/rss/server
+
+Plan:
+- fetch the query result to a buffer with url-get
+- parse the xml using the emacs 24 xml parser
+- fetch thumbnails and display asynchronously
+- each thumbnail is a button with an interface to inkmacs-file-import
+- download the svg and imort it when button clicked
+
+** TODO reflow
+it happens that flowtext can get a tranform because it was dragged
+around outside its flowframe. sometimes it would be nice to reflow.
+
+
+** TODO clean exports
+help to export clean interchange formats like svg 1.1 and PDF that
+actually works in acroread.
+*** TODO pdf
+inkscape has pdf export but it sometimes creates pdf:s which arent
+readable by acroread. 
+
+batix also has issues with the corresponding svg.
+
+- filter:url(#filter2573-3). the filter was undefined. It had gotten
+  removed during editing
+
+- svg version 1.2
+
+one workaround was using evince to filter the inkscape pdf.
+
+another way is checking the SVG with Batik and edit the XML in Emacs.
+it would work by parsing objoct references of type url and report.
+
+Emacs suffer from rogoxp overflow atm.
+
+https://bugs.launchpad.net/inkscape/+bug/780335
+contains good inforrmation:
+- scour
+  - vacuum
+*** TODO iterate all flowtext and convert to text
+flowtext is good when you work with your document. text flows nicely
+in your shapes. OTOH flowtext sucks when publishing your SVG because
+only SVG 1.1 is finalized flowtext requires 1.2.
+
+So it would be nice to convert back and forth.
+
+** TODO faster SVG renderer in Emacs
+THe SVG renderer in Emacs is librsvg. It's robust but not fast because
+it renders to a deep bitmap and doesn't seem to clip. Anyway, its not
+fast enough to pan around and zoom in and out of a SVG. Things to
+investigate:
+- make the librsvg usage faster by cleverer clipping and less bitmap
+  copying
+- try anether svg renderer like Cairo thats new and shiny
+
+the end result would be a dual screen displof which lets you select a
+region inside an SVG in one window and voom into that region in
+another window, on a separate projector for instance.
+
+** TODO recover if the first inkscape dies
+if you try to redo proxies then it crashes.

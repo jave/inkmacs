@@ -172,16 +172,16 @@ null if there is no desk. error if there is a broken desk."
           (error "It seems the desktop is gone. Maybe you closed it."))
       nil)))
 
-(defun inkmacs-edit ()
+(defun inkmacs-edit (force)
   "Inkscape edit the buffer or org tree."
-  (interactive)
+  (interactive "P")
   (cond 
    ((equal 'image-mode major-mode) ;;TODO check svg
     (inkscape-open-buffer-file))
    ((equal 'org-mode major-mode)
     (progn
       (inkorg-mode t)
-      (inkscape-local-instance (inkorg-svg-file-name))))
+      (inkscape-local-instance (inkorg-svg-file-name) force)))
    (t (error "Don't know how to inkmacs here."))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;,,
@@ -262,6 +262,7 @@ Argument INKORG-SELECT filters the nodes to select."
         (inkdoc-selection-add (inkscape-desktop)  (inkorg-flow-id id) ))))  
 
 
+
 (defun org-get-entry-2 ()
   "Get the entry text, after heading, to nex heading, or eof."
   (save-excursion
@@ -277,14 +278,15 @@ Argument INKORG-SELECT filters the nodes to select."
 Return a format suitable to
 create an inkscape text node from.
 asterisks and properties are removed."
-  ;;TODO there ought to be some code in org-exp for this somewhere
+  ;;TODO there ought to be some code in org-exp for this somewhere(org-ascii for example)
   (let ((text  (concat (org-get-heading) "\n" (org-get-entry-2))))
     (set-text-properties 0 (length text) nil text )
-    
-    (concat
-     (substring text 0 (string-match org-property-start-re text))
-     (if (string-match org-property-end-re text)
-         (substring text (progn (string-match org-property-end-re text) (match-end 0)) (length text))))))
+
+    (replace-regexp-in-string "\\([^\n]\\)\n\\([^\n]\\)" "\\1 \\2" 
+                              (concat
+                               (substring text 0 (string-match org-property-start-re text))
+                               (if (string-match org-property-end-re text)
+                                   (substring text (progn (string-match org-property-end-re text) (match-end 0)) (length text)))))))
 
 
 (defun inkorg-flow-id (id)
@@ -341,9 +343,15 @@ node, or update the node if it already exists."
          (id (inkorg-text-id (org-id-get nil t))))
     (inkdoc-text-apply-style (inkscape-desktop) id
                              0 10 "font-weight" "bold")    )
-  
+  )
 
 
+(defun inkorg-flow-to-text ()
+  "Convert selected nodes from flow to text. This should normaly
+  preserve formatting. This is useful for converting to a SVG 1.1
+  format."
+  (interactive)
+  (inkverb-object-flowtext-to-text (inkscape-desktop))
   )
 
 (defun inkorg-svg-file-name ()
