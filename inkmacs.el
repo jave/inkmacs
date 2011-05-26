@@ -346,6 +346,22 @@ node, or update the node if it already exists."
   )
 
 
+(defun inkorg-export-svg-1.1 ()
+  "export to svg 1.1 under a new name.
+the new file is un-flowrooted an scoured.
+Then it should render well in batik and firefox hopefully."
+  (interactive)
+  ;;this is not real code yet.
+  (unless (inkscape-desktop) (error "not an inkmacs buffer"))
+  (let* ((newname(concat  (buffer-file-name) "scoured.svg")))
+    (copy-file (buffer-file-name) newname)
+    (find-file newname)
+    (inkmacs-edit)
+    (select all flow nodes)
+    (inkorg-flow-to-text)
+    (save the file)
+    (scour the file))
+  )
 (defun inkorg-flow-to-text ()
   "Convert selected nodes from flow to text. This should normaly
   preserve formatting. This is useful for converting to a SVG 1.1
@@ -409,7 +425,23 @@ Argument NAME name of object."
       (inkdoc-get-attribute   desk name "id")
     (error nil)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; connectors
 
+(defun inkmacs-connector (start-id stop-id)
+  "make a connector from object with start-id to stop-id."
+  (let* ((path (inkdoc-line (inkscape-desktop) 0 0 100 100))) ;;the coords arent important
+    (inkdoc-set-attribute (inkscape-desktop) path "inkscape:connection-start" (concat "#" start-id))
+    (inkdoc-set-attribute (inkscape-desktop) path "inkscape:connection-start-point" "d4")
+    (inkdoc-set-attribute (inkscape-desktop) path "inkscape:connection-end" (concat "#" stop-id))
+    (inkdoc-set-attribute (inkscape-desktop) path "inkscape:connection-end-point" "d4")
+    (inkdoc-set-attribute (inkscape-desktop) path "inkscape:connector-type" "polyline")
+    (inkdoc-set-attribute (inkscape-desktop) path "style"
+                          "fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+                          )
+    )
+  ) 
+  
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
