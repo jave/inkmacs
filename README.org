@@ -307,7 +307,10 @@ one workaround was using evince to filter the inkscape pdf.
 another way is checking the SVG with Batik and edit the XML in Emacs.
 it would work by parsing objoct references of type url and report.
 
-Emacs suffer from rogoxp overflow atm.
+batik pdf transcode:
+java -jar /home/joakim/batik-1.7/batik-rasterizer.jar -m application/pdf tst.svg
+
+Emacs suffer from regexp overflow atm.
 
 https://bugs.launchpad.net/inkscape/+bug/780335
 contains good inforrmation:
