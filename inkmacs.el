@@ -264,7 +264,7 @@ Argument INKORG-SELECT filters the nodes to select."
 
 
 (defun org-get-entry-2 ()
-  "Get the entry text, after heading, to nex heading, or eof."
+  "Get the entry text, after heading, to next heading, or eof."
   (save-excursion
     (org-back-to-heading t)
     (let ((p1 (point-at-bol 2))
@@ -334,15 +334,14 @@ node, or update the node if it already exists."
          (id (inkorg-text-id (org-id-get nil t))))
     (if (inkmacs-node-exists (inkscape-desktop) id)
         (inkdoc-set-text (inkscape-desktop) id (inkorg-entry-text))
-      (inkorg-create-text-node))))
+      (inkorg-create-text-node))
+    (inkorg-apply-text-formatting id 0 (string-match "\n" text));; TODO allow different styles. this one just bollds up to 1st newline
+))
 
-(defun inkorg-apply-text-formatting ()
+(defun inkorg-apply-text-formatting (text-id range-start range-end )
   "experimental. needs patched inkscape"
-  (interactive)
-  (let* ((text (inkorg-entry-text))
-         (id (inkorg-text-id (org-id-get nil t))))
-    (inkdoc-text-apply-style (inkscape-desktop) id
-                             0 10 "font-weight" "bold")    )
+  (inkdoc-text-apply-style (inkscape-desktop) text-id
+                           range-start range-end "font-weight" "bold")    
   )
 
 
