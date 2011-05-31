@@ -286,7 +286,14 @@ Plan:
 ** TODO reflow
 it happens that flowtext can get a tranform because it was dragged
 around outside its flowframe. sometimes it would be nice to reflow.
+** TODO resize flowframe from text size
+the frame holding a flowed text is often too small. currently it needs
+to be resized by hand. it appears possible to find the height of the
+flowtext and set the height of the flowframe accordingly.
 
+note that the ontire point of flowframes is that the frame sets the
+size of the text. so its not meaningful to set more than either height
+or width from the text.
 
 ** TODO clean exports
 help to export clean interchange formats like svg 1.1 and PDF that
@@ -338,3 +345,7 @@ another window, on a separate projector for instance.
 
 ** TODO recover if the first inkscape dies
 if you try to redo proxies then it crashes.
+
+** TODO jessyink support
+jessyink is an inkscape extension that creates portable presentations
+in svg. I want inkmacs to be compatile. I think it should be mostly already.
