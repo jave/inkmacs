@@ -39,17 +39,18 @@ then we have buffer local instances.")
   (dbus-ping :session   "org.inkscape" 100))
 
 
-(defun inkscape-register-proxies ()
+(defun inkscape-register-proxies (&optional force)
   "Register proxys."
   (interactive)
-  (unless inkscape-proxies-registered
-    (message "registering dbus proxies")
-    (setq inkscape-application (inkscape-app-dbus-proxy-create)) ;;seems to bring up an inkscape window
-    (setq inkscape-desktop-dummy (inkscape-document-dbus-proxy-create inkscape-desktop-name))
-    (message "registering inkscape verb proxies")
-    (inkscape-make-verb-list)
-    (message "emacs-inkscape bridge ready for action!")
-    (setq inkscape-proxies-registered t)))
+  (if (or force (not inkscape-proxies-registered))
+      (progn
+        (message "registering dbus proxies")
+        (setq inkscape-application (inkscape-app-dbus-proxy-create)) ;;seems to bring up an inkscape window
+        (setq inkscape-desktop-dummy (inkscape-document-dbus-proxy-create inkscape-desktop-name))
+        (message "registering inkscape verb proxies")
+        (inkscape-make-verb-list)
+        (message "emacs-inkscape bridge ready for action!")
+        (setq inkscape-proxies-registered t))))
 
 ;; call-verb support
 
@@ -441,7 +442,34 @@ Argument NAME name of object."
     )
   ) 
   
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; presentation
+(defun inkmacs-zoom-id (id)
+  "zoom the object with the provided id."
+  (interactive "sid:")
+  (inkdoc-selection-set (inkscape-desktop) id)
+  (inkverb-zoom-selection  (inkscape-desktop)))
 
+
+;;display-area functions require a patched inkscape atm
+(defun inkmacs-zoom-animate (r0x0 r0y0 r0x1 r0y1
+                                  r1x0 r1y0 r1x1 r1y1)
+  (inkdoc-document-set-display-area (inkscape-desktop) r0x0 r0y0 r0x1 r0y1 1.0)
+  (let* ((step 100)
+         (s1 (/ (- r1x0 r0x0 ) step))
+         (s2 (/ (- r1y0 r0y0 ) step))
+         (s3 (/ (- r1x1 r0x1 ) step))
+         (s4 (/ (- r1y1 r0y1 ) step)))
+    
+    (loop for i from 0 to step do
+         (inkdoc-document-set-display-area (inkscape-desktop) (+ r0x0 (* i s1)) (+ r0y0 (* i s2)) (+ r0x1 (* i s3)) (+ r0y1 (* i s4)) 1.0))))
+
+
+
+
+(defun inkmacs-zoom-animate-to   ( r1x0 r1y0 r1x1 r1y1)
+  (apply  'inkmacs-zoom-animate
+          (append (inkdoc-document-get-display-area (inkscape-desktop)) (list r1x0 r1y0 r1x1 r1y1))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
