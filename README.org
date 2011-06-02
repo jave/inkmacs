@@ -323,6 +323,9 @@ https://bugs.launchpad.net/inkscape/+bug/780335
 contains good inforrmation:
 - scour
   - vacuum
+
+one particular gradient type causes problems. "reflected". identify
+and remove.
 *** TODO iterate all flowtext and convert to text
 flowtext is good when you work with your document. text flows nicely
 in your shapes. OTOH flowtext sucks when publishing your SVG because
@@ -349,3 +352,17 @@ if you try to redo proxies then it crashes.
 ** TODO jessyink support
 jessyink is an inkscape extension that creates portable presentations
 in svg. I want inkmacs to be compatile. I think it should be mostly already.
+
+** TODO focus on particular area during presentations
+works like this:
+- make a special layer with named rectangles. these are your focus
+  areas
+- make layer invisible during presentation
+- bind "inkmacs-zoom-id" to something convenient during your
+  presentation
+
+the last part is the only tricky thing since Inkscape will be in focus
+and Emacs won't have kbd focus. you will need a bridge at the WM
+level. dbus or emacsclient.
+
+also you will need to know the ids of your focus objects.
