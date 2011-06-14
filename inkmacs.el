@@ -455,7 +455,7 @@ Argument NAME name of object."
 (defun inkmacs-zoom-animate (r0x0 r0y0 r0x1 r0y1
                                   r1x0 r1y0 r1x1 r1y1)
   (inkdoc-document-set-display-area (inkscape-desktop) r0x0 r0y0 r0x1 r0y1 1.0)
-  (let* ((step 100)
+  (let* ((step 10)
          (s1 (/ (- r1x0 r0x0 ) step))
          (s2 (/ (- r1y0 r0y0 ) step))
          (s3 (/ (- r1x1 r0x1 ) step))
@@ -471,6 +471,43 @@ Argument NAME name of object."
   (apply  'inkmacs-zoom-animate
           (append (inkdoc-document-get-display-area (inkscape-desktop)) (list r1x0 r1y0 r1x1 r1y1))))
 
+(defun inkmacs-zoom-animate-to-view (view)
+  (interactive "sid:")
+  (setq inkmacs-previous-view view)
+  (let* ((d (inkscape-desktop))
+         (x       (string-to-number (inkdoc-get-attribute d view "x")))
+         (y       (string-to-number (inkdoc-get-attribute d view "y")))
+         (height       (string-to-number (inkdoc-get-attribute d view "height")))
+         (width       (string-to-number (inkdoc-get-attribute d view "width"))))
+    (inkmacs-zoom-animate-to x y (+ x width) (+ y height))))
+
+
+(defun inkmacs-get-view-ids ()
+  "user defined areas of interest"
+  (org-entry-get-multivalued-property nil "views"))
+
+(defvar inkmacs-previous-view)
+
+(defun inkmacs-zoom-next-view ()
+  (let* ((last-pos (position-if (lambda (x) (equal x inkmacs-previous-view)) (inkmacs-get-view-ids)))
+         (last-pos (if last-pos last-pos 0));;fugly. what it lamely tries to achieve is set last pos to 0 as a default
+         )
+    )
+  )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;signals. you need a very experimental inkscape patch for this
+(defun inkmacs-signal-demo ()
+  (dbus-register-signal
+   :session "org.inkscape" "/org/inkscape/desktop_0"
+   "org.inkscape.document" "object_moved"
+   'inkmacs-signal-handler
+))
+
+(defun inkmacs-signal-handler (id)
+  (let ((x       (inkdoc-get-attribute inkscape-desktop-dummy id "x"))
+        (y       (inkdoc-get-attribute inkscape-desktop-dummy id "y")))
+    (message "id:%s x:%s y:%s" id x y)))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;test code
