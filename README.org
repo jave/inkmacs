@@ -118,19 +118,34 @@ I am also interested in building a presentation tool on top of the
 
 For this we want to:
 *** TODO make the xwidget Emacs branch usable, so inkscape can be embedded
-   in Emacs(this is very far future)
+   in Emacs. I've done some initial experiments with a xembed patch
+   for Inkscape and the xwidget branch for emacs. It is possible to
+   embedded Inkscape in Emacs with this particular stack. There are a
+   number of problems that are documented in the xwdiget
+   readme. Briefly:
+- xwidgets can't support emacs split window paradigm with sockets
+  easily. 
+- the xembed patch for inkscape is just proof of concept. Some more
+  support like creating new xembed windows using perhaps the  dbus
+  api would be useful
+- inkscape doesn't seem able to create several views for the same
+  document. investigate.
+   
+   
 **** TODO make inkscape support xembed, so it can be embedded in Emacs.
     I have  a branch on launchpad for this but it has issues and is
-    long term
-**** TODO make an inkscape mode that shows just the canvas.
-maybe using inkview. 
+    long term. see above also.
+**** CANCELLED make an inkscape mode that shows just the canvas.
+     CLOSED: [2011-07-28 Thu 12:35]
+maybe using inkview. I noticed Inkscape has a shift-F11 mode which
+should do the trick.
 *** TODO make an Emacs inkscape control mode that implements a proper Emacs
    ui on top of inkscape. the foundation for this is done. Whats
    lacking is good bindings.
 *** DONE somehow implement the Emacs buffer model with inkscape
 *** TODO implement a form of OLE.
 display svg images inline muse-mode org org mode for example. this is
-already mostly possible.
+already mostly possible. this requires working xembed xwidgets.
 
 *** DONE edit the svg inside inkscape when desired
 
@@ -140,7 +155,7 @@ nodes in an outline-mode document should preferably be bound to nodes
  
 ** TODO an annoying extra inkscape window appears
 happens when the proxies are registered. theres seemingly no straightforward way
-around it.
+around it. introspection of a live instance appears needed.
 
 ** some test code snippets
 check alive
@@ -221,7 +236,8 @@ removed from the ink doc. this is however a bit tricky.
  the only reasonable alternative seems to be to use a naming convention:
  inkmacs-<type>-<orgid>
 
-** TODO subtree export support
+** DONE subtree export support
+   CLOSED: [2011-06-16 Thu 11:42]
 inkorg mode works sort of like org export but its not always entirely
 the same. Nevertheless inkorg should reuse org export code when possible.
 A big difference is that the svg file is used in tandem with org. it
@@ -246,7 +262,8 @@ org mode does this already.
 
 *** TODO look at org-ascii
 to replace my text extractor
-** TODO support formatted text
+** DONE support formatted text
+   CLOSED: [2011-06-16 Thu 11:42]
 For this we need:
 - support to apply styles to text via ibus in inkscape.
 My dbusfixes branch has this and the prospect of inclusion are good.
@@ -254,6 +271,8 @@ My dbusfixes branch has this and the prospect of inclusion are good.
 
 The way things work atm this will be a 2 step process. create text,
 then apply styles. 
+
+I now support bold headings which is good enough for now
 
 ** TODO better file import wrapper
 Emacs is a great file selecor I'd like to use in order to import clip
@@ -283,9 +302,6 @@ Plan:
 - each thumbnail is a button with an interface to inkmacs-file-import
 - download the svg and imort it when button clicked
 
-** TODO reflow
-it happens that flowtext can get a tranform because it was dragged
-around outside its flowframe. sometimes it would be nice to reflow.
 ** TODO resize flowframe from text size
 the frame holding a flowed text is often too small. currently it needs
 to be resized by hand. it appears possible to find the height of the
@@ -294,6 +310,22 @@ flowtext and set the height of the flowframe accordingly.
 note that the ontire point of flowframes is that the frame sets the
 size of the text. so its not meaningful to set more than either height
 or width from the text.
+
+*** DONE parent child accessors
+    CLOSED: [2011-06-16 Thu 11:40]
+Its a little difficult to get the sizes for rendered flowtext. I've
+implemented the dbus parent/child accessors needed as a first step.
+
+** TODO cleanup flowroot transforms
+When you move things around and scale, it can happen that flowroots
+get their own transforms. Then all layout breaks.
+In those cases it would be useful to reset the transforms so text
+flows inside their flow frame again. If you really want the text to
+have an offset or something you are probably out of luck.
+
+remove these attributes:
+flowroot.transform
+flowroot/flowregion/use.tranform
 
 ** TODO clean exports
 help to export clean interchange formats like svg 1.1 and PDF that
@@ -333,7 +365,8 @@ only SVG 1.1 is finalized flowtext requires 1.2.
 
 So it would be nice to convert back and forth.
 
-** TODO faster SVG renderer in Emacs
+** DONE faster SVG renderer in Emacs
+   CLOSED: [2011-07-28 Thu 12:44]
 THe SVG renderer in Emacs is librsvg. It's robust but not fast because
 it renders to a deep bitmap and doesn't seem to clip. Anyway, its not
 fast enough to pan around and zoom in and out of a SVG. Things to
@@ -342,18 +375,27 @@ investigate:
   copying
 - try anether svg renderer like Cairo thats new and shiny
 
-the end result would be a dual screen displof which lets you select a
-region inside an SVG in one window and voom into that region in
+the end result would be a dual screen display which lets you select a
+region inside an SVG in one window and zoom into that region in
 another window, on a separate projector for instance.
+
+The emacs xwidget branch allows for webkit rendering of SVG in Emacs,
+so I'll consider this done.
 
 ** TODO recover if the first inkscape dies
 if you try to redo proxies then it crashes.
 
+** TODO attach to existing inkscape
+(defun inkscape-document-dbus-proxy-create (desktop &optional session)
+useful for debugging. some more stuff is needed:
+- list existing inkscape dbus sessions
+- provide interactively
 ** TODO jessyink support
 jessyink is an inkscape extension that creates portable presentations
 in svg. I want inkmacs to be compatile. I think it should be mostly already.
 
-** TODO focus on particular area during presentations
+** DONE focus on particular area during presentations
+   CLOSED: [2011-06-16 Thu 11:38]
 works like this:
 - make a special layer with named rectangles. these are your focus
   areas
@@ -366,3 +408,94 @@ and Emacs won't have kbd focus. you will need a bridge at the WM
 level. dbus or emacsclient.
 
 also you will need to know the ids of your focus objects.
+
+this is mostly implemented now
+
+** TODO poster print tiling
+https://bugs.launchpad.net/inkscape/+bug/170274
+poster -v   jira.eps > jira.poster.ps && evince jira.poster.ps 
+
+poster unexpectedly didn't work for my simple test. 
+
+another strategy could be to automate tilling from inkmacs via dbus.
+
+** TODO template instantiation
+suppose you want to create a template object, like a speech
+bubble. you want to create clones of this bubble filled with different
+text. furthermore you want to be able to know the ID of the text nodes
+you want to change such that you can update them again later.
+
+There are some annoyances with this:
+- Emacs is a bit limited when modifying xml. There is an xml parser in
+  Emacs 24, but there is no convenient xslt like functionality other
+  than traversing the sexp tree and changing it, which would be okay
+  except I don't feel like reinventing the wheel yet again
+- there is no way of injecting the instantiated template into the
+  inkscape DOM other than using a temporary file. and the template
+  would need to be trimmed before injecting. and the existing inkscape
+  important verb requires to use an interacive dialogue.
+
+so, these add up to be quite annoying.
+path of least resistance seems to be a dbus file import function.
+
+** TODO really funny layer resize bug
+If you create a document from scratch with ink-org and create nodes
+they will go to unnamed "root layer". If you then resize the document
+flowtexts will move separately from flowroots!
+
+If you create layers and cut/paste all nodes into the new layer this
+behaviour goes away.
+
+investigate:
+- is my empty init doc wrong? should it have a layer?
+- does nodes get created with wrong attribs?
+
+** TODO better org mode text extraction
+currently I have my own org-entry-to-plain-text function. I couldnt
+find anything in org. surely there must be.
+
+whatever the solution it should:
+- export plain text
+- newlines only on new paragraph
+- support bullet lists
+
+** TODO palette support
+anything-colors has a pretty nice color picker that could be used. But
+I would like to be able to also select the palette, frem the set of
+palettes Inkscape offers.
+
+** TODO better flowframe shape support
+by default ugly rects get created
+- provide facility to select shape on creation
+- also be able to swap shape ID:s
+** TODO [#C] try adding black bottom rectangle by svg file manipulation for drawings
+this is wanted because some rendeerers see the bg as transparent, while
+some dont. a bg rect fixes this, but you need to add it explicitly.
+
+** TODO configurable text mode support
+either ordinary svg text or svg 1.2 flowframe text.
+I've implemented flowframe text but Inkscape has a number of issues
+with it such as that its inconvenient to handle two objects for one
+text object.
+
+If you are sattisfied with Emacs dictating the linebreaks rather than
+a separate Inkscape flowframe object, an ordinary svg text object
+would be less hassle.
+
+** DONE separate text and flow object layers
+   CLOSED: [2011-07-29 Fri 02:41]
+to make it easier to keep track of the objects which is the main
+source of trouble at the moment.
+- inkmacs-text layer
+- inkmacs-text-flow layer
+
+the flow objects should simply be semi-transparent rectangles with
+frames. hide the layer when you don't want to see it.
+
+done, but the inkscape dbus layer functions are somewhat fragile still.
+
+** TODO support multiple page 
+http://sourceforge.net/projects/inkscape-pages
+the current imkmacs code care about layer names so would need to check.
+** TODO support org attachments
+the svg file could be an attachment to the org tree.
