@@ -499,3 +499,11 @@ http://sourceforge.net/projects/inkscape-pages
 the current imkmacs code care about layer names so would need to check.
 ** TODO support org attachments
 the svg file could be an attachment to the org tree.
+** TODO inkmacs ease of use
+should work:
+(require 'inkmacs)
+this inkscape is too old:
+(setq inkscape-path "/home/joakim/build_myprojs/inkscape/inkscape.dbus/src/inkscape")
+
+- recognize if inkscape lacks dbus. currently it just fails.
+
