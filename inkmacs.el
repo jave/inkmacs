@@ -41,7 +41,9 @@ then we have buffer local instances.")
 
 
 (defun inkscape-register-proxies (&optional force)
-  "Register proxys."
+  "Register proxys. FORCE re-registers methods.
+This is useful if Inkscape has aquired new methods, or the
+previous proxy creation run failed for some reason."
   (interactive)
   (if (or force (not inkscape-proxies-registered))
       (progn
@@ -145,19 +147,27 @@ slow the first time, then not so bad."
   (inkdoc-close (inkscape-desktop))
   (setq inkscape-desktop-instance nil))
 
+(defvar inkmacs-dummy-process nil)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;initialize bridge
-;;since we need the dummy desktop in order for the dbus classes to exist
-;;it must be called before method definitions
-(inkscape-register-proxies)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defmethod inkscape-desktop-alive ( (this org\.freedesktop\.DBus\.Introspectable-org\.freedesktop\.DBus\.Properties-org\.inkscape\.document))
-  "Check if the desktop is alive."
-  ;;todo make this method actually work
-  (dbus-introspect-get-method-names  :session "org.inkscape"
-                                     (oref this object)
-                                     "org.inkscape.document"))
+(defun inkmacs-init ()
+  (interactive)
+  ;;it seems that an inkscape process must be running to expose the dbus api
+  ;;it shouldnt really be necessary so investigate TODO
+  (unless inkmacs-dummy-process
+    (setq inkmacs-dummy-process (start-process "inkscape" "*inkscape process*" inkscape-path ))
+    ;;inkscape must acutally be active
+    ;;TODO dbus ping in a loop or something rather than a sleep
+    (sleep-for 20))
+  ;;initialize bridge
+  ;;since we need the dummy desktop in order for the dbus classes to exist
+  ;;it must be called before method definitions
+  (inkscape-register-proxies)
+  (defmethod inkscape-desktop-alive ( (this org\.freedesktop\.DBus\.Introspectable-org\.freedesktop\.DBus\.Properties-org\.inkscape\.document))
+    "Check if the desktop is alive."
+    ;;todo make this method actually work
+    (dbus-introspect-get-method-names  :session "org.inkscape"
+                                       (oref this object)
+                                       "org.inkscape.document")))
 
 (defun inkscape-desktop ()
   "Return the inkscape desktop suitable for the context.
@@ -620,7 +630,19 @@ Argument NAME name of object."
     (inkdoc-rectangle d 0 0 1000 1000)
     )
   )
-
+(defcustom inkmacs-sketch-directory "~/inkmacs" "where to store sketches made with inkmacs-sketch")
+(defun inkmacs-sketch ()
+  "make a sketch with inkmacs!"
+  (interactive)
+  (require 'inkmacs)
+  (inkmacs-init)
+  (let ((inkfile (concat inkmacs-sketch-directory (time-stamp-string "%Y-%:m-%:d-%:H%:M") ".svg")))
+    (inkmacs-create-empty-svg      inkfile)
+    (with-current-buffer 
+        (find-file inkfile)
+      (image-mode)
+      (inkscape-open-buffer-file)))
+  )
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;test code
