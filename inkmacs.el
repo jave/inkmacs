@@ -149,25 +149,33 @@ slow the first time, then not so bad."
 
 (defvar inkmacs-dummy-process nil)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun inkmacs-init ()
+(defun inkmacs-init (&optional force)
   (interactive)
   ;;it seems that an inkscape process must be running to expose the dbus api
   ;;it shouldnt really be necessary so investigate TODO
-  (unless inkmacs-dummy-process
-    (setq inkmacs-dummy-process (start-process "inkscape" "*inkscape process*" inkscape-path ))
-    ;;inkscape must acutally be active
-    ;;TODO dbus ping in a loop or something rather than a sleep
-    (sleep-for 20))
-  ;;initialize bridge
-  ;;since we need the dummy desktop in order for the dbus classes to exist
-  ;;it must be called before method definitions
-  (inkscape-register-proxies)
-  (defmethod inkscape-desktop-alive ( (this org\.freedesktop\.DBus\.Introspectable-org\.freedesktop\.DBus\.Properties-org\.inkscape\.document))
-    "Check if the desktop is alive."
-    ;;todo make this method actually work
-    (dbus-introspect-get-method-names  :session "org.inkscape"
-                                       (oref this object)
-                                       "org.inkscape.document")))
+  (if (or force
+          (not inkmacs-dummy-process)
+          (not (get-buffer-process "*inkscape process*"))
+          (process-live-p (get-buffer-process "*inkscape process*")))
+      (progn
+        (setq inkmacs-dummy-process (start-process "inkscape" "*inkscape process*" inkscape-path ))
+        ;;inkscape must acutally be active, so sleep after start
+        ;;TODO dbus ping in a loop or something rather than a sleep
+        (sleep-for 20)
+        ;;initialize bridge
+        ;;since we need the dummy desktop in order for the dbus classes to exist
+        ;;it must be called before method definitions and it must be called again if the process connection is lost
+        ;;(which is weird)
+        (inkscape-register-proxies t)
+        (defmethod inkscape-desktop-alive ( (this org\.freedesktop\.DBus\.Introspectable-org\.freedesktop\.DBus\.Properties-org\.inkscape\.document))
+          "Check if the desktop is alive."
+          ;;todo make this method actually work
+          (dbus-introspect-get-method-names  :session "org.inkscape"
+                                             (oref this object)
+                                             "org.inkscape.document"))
+        ))
+
+)
 
 (defun inkscape-desktop ()
   "Return the inkscape desktop suitable for the context.
