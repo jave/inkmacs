@@ -156,7 +156,7 @@ slow the first time, then not so bad."
   (if (or force
           (not inkmacs-dummy-process)
           (not (get-buffer-process "*inkscape process*"))
-          (process-live-p (get-buffer-process "*inkscape process*")))
+          (not (process-live-p (get-buffer-process "*inkscape process*"))))
       (progn
         (setq inkmacs-dummy-process (start-process "inkscape" "*inkscape process*" inkscape-path ))
         ;;inkscape must acutally be active, so sleep after start
