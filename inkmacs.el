@@ -639,13 +639,30 @@ Argument NAME name of object."
     )
   )
 (defcustom inkmacs-sketch-directory "~/inkmacs" "where to store sketches made with inkmacs-sketch")
+(defcustom inkmacs-template-directory "~/inkmacs-templates" "where to store templates for inkmacs")
+
+(defun inkmacs-templates ()
+  (directory-files inkmacs-template-directory t ".*svg"))
+
+(defun inkmacs-instantiate-template (inkfile template)
+  "instantiate an inkscape template. the name will be
+INKFILE. TEMPLATE is the name of the template, if 'ask, ask the
+name. if nil, use default template."
+  (cond ((not template)
+         (inkmacs-create-empty-svg  inkfile))
+        ((equal 'ask template )
+         (let (( ltemplate (read-file-name  "template:" inkmacs-template-directory nil t nil (lambda (f) (string-match ".*svg" f)))))
+           (copy-file ltemplate inkfile)))
+        (t (copy-file template inkfile)))
+  )
+
 (defun inkmacs-sketch ()
   "make a sketch with inkmacs!"
   (interactive)
   (require 'inkmacs)
   (inkmacs-init)
-  (let ((inkfile (concat inkmacs-sketch-directory (time-stamp-string "%Y-%:m-%:d-%:H%:M") ".svg")))
-    (inkmacs-create-empty-svg      inkfile)
+  (let ((inkfile (concat inkmacs-sketch-directory (time-stamp-string "%04y-%02m-%02d-%02H%02M") ".svg")))
+    (inkmacs-instantiate-template inkfile 'ask)
     (with-current-buffer 
         (find-file inkfile)
       (image-mode)
