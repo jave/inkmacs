@@ -49,6 +49,13 @@ previous proxy creation run failed for some reason."
       (progn
         (message "registering dbus proxies")
         (setq inkscape-application (inkscape-app-dbus-proxy-create)) ;;seems to bring up an inkscape window
+        ;;sometimes the class of inkscape-application mysteriously becomes unset; "#<class >"
+        ;;when it should be:
+        ;;          "#<class org.freedesktop.DBus.Introspectable-org.freedesktop.DBus.Properties-org.inkscape.application>"
+        ;;I have no idea why, thus this assert
+        (assert (equal (object-class-name inkscape-application)
+                    "#<class org.freedesktop.DBus.Introspectable-org.freedesktop.DBus.Properties-org.inkscape.application>")
+                "inkscape-application class is not correct. please inspect.")
         (setq inkscape-desktop-dummy (inkscape-document-dbus-proxy-create inkscape-desktop-name))
         (message "registering inkscape verb proxies")
         (inkscape-make-verb-list)
@@ -161,7 +168,8 @@ slow the first time, then not so bad."
         (setq inkmacs-dummy-process (start-process "inkscape" "*inkscape process*" inkscape-path ))
         ;;inkscape must acutally be active, so sleep after start
         ;;TODO dbus ping in a loop or something rather than a sleep
-        (sleep-for 20)
+        ;;(sleep-for 20)
+        (inkscape-alive)
         ;;initialize bridge
         ;;since we need the dummy desktop in order for the dbus classes to exist
         ;;it must be called before method definitions and it must be called again if the process connection is lost
