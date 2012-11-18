@@ -163,8 +163,9 @@ slow the first time, then not so bad."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun inkmacs-init (&optional force)
   (interactive)
-  ;;it seems that an inkscape process must be running to expose the dbus api
-  ;;it shouldnt really be necessary so investigate TODO
+  ;;an inkscape process must be running to expose the dbus api
+  ;;for dbus introspection to work
+  ;;(using the interface definitions might also work)
   (if (or force
           (not inkmacs-dummy-process)
           (not (get-buffer-process "*inkscape process*"))
@@ -215,6 +216,10 @@ null if there is no desk. error if there is a broken desk."
     (progn
       (inkorg-mode t)
       (inkscape-local-instance (inkorg-svg-file-name) force)))
+   ((equal 'dired-mode major-mode)
+    (dired-find-file)
+    (inkscape-open-buffer-file))
+
    (t (error "Don't know how to inkmacs here."))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;,,
