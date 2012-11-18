@@ -219,6 +219,10 @@ null if there is no desk. error if there is a broken desk."
    ((equal 'dired-mode major-mode)
     (dired-find-file)
     (inkscape-open-buffer-file))
+   ((equal 'image-dired-thumbnail-mode major-mode)
+    ;;(image-dired-display-thumbnail-original-image) ;;TODO investigate
+    (find-file (image-dired-original-file-name))
+    (inkscape-open-buffer-file))
 
    (t (error "Don't know how to inkmacs here."))))
 
