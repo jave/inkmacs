@@ -16,7 +16,7 @@
 (require 'dbus-proxy)
 (require 'org)
 (require 'org-exp)
-
+(require 'time-stamp)
 ;;TODO this doesnt work out of the box for uninstalled inkscape
 (defcustom inkscape-path
   "inkscape"
@@ -31,6 +31,17 @@ then we have buffer local instances.")
 
 (defvar inkscape-application nil
   "There is only one inkscape application.")
+(defun inkscape-application-get ()
+  "retrieve inkscape-application, checkt that its ok"
+  ;;sometimes the class of inkscape-application mysteriously becomes unset; "#<class >"
+  ;;when it should be:
+  ;;          "#<class org.freedesktop.DBus.Introspectable-org.freedesktop.DBus.Properties-org.inkscape.application>"
+  ;;I have no idea why, thus this assert
+  (assert (equal (object-class-name inkscape-application)
+                 "#<class org.freedesktop.DBus.Introspectable-org.freedesktop.DBus.Properties-org.inkscape.application>")
+          "inkscape-application class is not correct. please inspect.")
+  inkscape-application
+  )
 
 (defvar inkscape-proxies-registered nil
   "The proxies needs creating once.  reset it if the interface changes.")
@@ -49,13 +60,7 @@ previous proxy creation run failed for some reason."
       (progn
         (message "registering dbus proxies")
         (setq inkscape-application (inkscape-app-dbus-proxy-create)) ;;seems to bring up an inkscape window
-        ;;sometimes the class of inkscape-application mysteriously becomes unset; "#<class >"
-        ;;when it should be:
-        ;;          "#<class org.freedesktop.DBus.Introspectable-org.freedesktop.DBus.Properties-org.inkscape.application>"
-        ;;I have no idea why, thus this assert
-        (assert (equal (object-class-name inkscape-application)
-                    "#<class org.freedesktop.DBus.Introspectable-org.freedesktop.DBus.Properties-org.inkscape.application>")
-                "inkscape-application class is not correct. please inspect.")
+        (inkscape-application-get);;check the newly created proxy(because sometimes it doesnt work)
         (setq inkscape-desktop-dummy (inkscape-document-dbus-proxy-create inkscape-desktop-name))
         (message "registering inkscape verb proxies")
         (inkscape-make-verb-list)
@@ -130,7 +135,7 @@ slow the first time, then not so bad."
   (interactive)
   (if (and (not force) (inkscape-desktop))
       (error "There already is a linked inkscape. "))
-  (let ((newdesk (car (last (split-string (inkapp-desktop-new inkscape-application ) "/")))))
+  (let ((newdesk (car (last (split-string (inkapp-desktop-new ( inkscape-application-get) ) "/")))))
     (set (make-local-variable 'inkscape-desktop-instance) (inkscape-document-dbus-proxy-create newdesk))
     (setq inkscape-desktop-instances (acons file-name inkscape-desktop-instance inkscape-desktop-instances))
     ;;todo inkdoc-load doesnt like if theres no actual file
