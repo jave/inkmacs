@@ -175,6 +175,7 @@ slow the first time, then not so bad."
         ;;inkscape must acutally be active, so sleep after start
         ;;TODO dbus ping in a loop or something rather than a sleep
         ;;(sleep-for 20)
+        (read-string "press enter when you think inkscape is ready to present its dbus interface")
         (inkscape-alive)
         ;;initialize bridge
         ;;since we need the dummy desktop in order for the dbus classes to exist
